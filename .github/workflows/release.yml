@@ -1,0 +1,52 @@
+name: Release to prod
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Git ref to deploy'
+        required: true
+        default: 'main'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-prod
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Build + deploy to prod
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Build (static)
+        run: npm run generate
+        env:
+          NUXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.PROD_NUXT_PUBLIC_FIREBASE_API_KEY }}
+          NUXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.PROD_NUXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
+          NUXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.PROD_NUXT_PUBLIC_FIREBASE_PROJECT_ID }}
+          NUXT_PUBLIC_FIREBASE_STORAGE_BUCKET: ${{ secrets.PROD_NUXT_PUBLIC_FIREBASE_STORAGE_BUCKET }}
+          NUXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.PROD_NUXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
+          NUXT_PUBLIC_FIREBASE_APP_ID: ${{ secrets.PROD_NUXT_PUBLIC_FIREBASE_APP_ID }}
+          NUXT_PUBLIC_TURNSTILE_SITE_KEY: ${{ secrets.PROD_NUXT_PUBLIC_TURNSTILE_SITE_KEY }}
+          NUXT_PUBLIC_APP_URL: ${{ vars.PROD_NUXT_PUBLIC_APP_URL || 'https://kilns.acaistudios.com' }}
+          NUXT_PUBLIC_ENV: prod
+          NUXT_PUBLIC_USE_EMULATORS: 'false'
+      - name: Deploy to Firebase Hosting (prod)
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_PROD }}
+          projectId: ${{ vars.FIREBASE_PROJECT_PROD || 'acai-kilns-prod' }}
+          channelId: live

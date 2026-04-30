@@ -1,0 +1,7 @@
+{
+  "projects": {
+    "default": "acai-kilns-dev",
+    "dev": "acai-kilns-dev",
+    "prod": "acai-kilns-prod"
+  }
+}

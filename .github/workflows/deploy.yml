@@ -1,0 +1,70 @@
+name: Build + deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    outputs:
+      artifact: ${{ steps.upload.outputs.artifact-id }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Build (static)
+        run: npm run generate
+        env:
+          NUXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NUXT_PUBLIC_FIREBASE_API_KEY }}
+          NUXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.NUXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
+          NUXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.NUXT_PUBLIC_FIREBASE_PROJECT_ID }}
+          NUXT_PUBLIC_FIREBASE_STORAGE_BUCKET: ${{ secrets.NUXT_PUBLIC_FIREBASE_STORAGE_BUCKET }}
+          NUXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.NUXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
+          NUXT_PUBLIC_FIREBASE_APP_ID: ${{ secrets.NUXT_PUBLIC_FIREBASE_APP_ID }}
+          NUXT_PUBLIC_TURNSTILE_SITE_KEY: ${{ secrets.NUXT_PUBLIC_TURNSTILE_SITE_KEY }}
+          NUXT_PUBLIC_APP_URL: ${{ vars.NUXT_PUBLIC_APP_URL || 'https://acai-kilns-dev.web.app' }}
+          NUXT_PUBLIC_ENV: ${{ vars.NUXT_PUBLIC_ENV || 'dev' }}
+          NUXT_PUBLIC_USE_EMULATORS: 'false'
+      - name: Upload build artifact
+        id: upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: hosting-public
+          path: .output/public
+          retention-days: 7
+
+  deploy-dev:
+    name: Deploy to dev
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: hosting-public
+          path: .output/public
+      - name: Deploy to Firebase Hosting (dev)
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DEV }}
+          projectId: ${{ vars.FIREBASE_PROJECT_DEV || 'acai-kilns-dev' }}
+          channelId: live

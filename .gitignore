@@ -1,22 +1,13 @@
-# Firebase build and deployment files
-/firebase-debug.log
-/firebase-debug.*.log
-.firebaserc
-
-# Firebase Hosting
-/firebase.json
-*.cache
-hosting/.cache
-
-# Firebase Functions
+# Dependencies
+node_modules/
 /functions/node_modules/
-/functions/.env
-/functions/package-lock.json
 
-# Firebase Emulators
-/firebase-*.zip
-/.firebase/
-/emulator-ui/
+# Build output
+.nuxt/
+.output/
+dist
+dist/
+.vite/
 
 # Logs
 *.log
@@ -24,5 +15,32 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Environment files (local configs)
-/.env.*
+# Firebase debug + local state
+firebase-debug.log
+firebase-debug.*.log
+*.cache
+hosting/.cache
+firebase-*.zip
+.firebase/
+emulator-ui/
+
+# Emulator export data (regenerate locally; not part of repo state)
+.emulator-data/
+
+# Functions local lockfile (npm 9+ deduplicates predictably; revisit if CI drifts)
+/functions/package-lock.json
+/functions/.env
+
+# Local env (NEVER commit secrets)
+.env
+.env.*
+!env.example
+service-account*.json
+
+# Tracking docs / reference data — internal only, not committed
+/docs/*
+
+# OS / editor noise
+.DS_Store
+.idea/
+.vscode/

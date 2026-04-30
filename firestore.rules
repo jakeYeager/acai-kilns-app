@@ -1,0 +1,16 @@
+rules_version = '2';
+
+// Phase 0 stub. Hardened in phase 2 per plan §5:
+// - member/admin custom claims
+// - 24h collective edit window for firings
+// - admin-only soft-delete and lookup writes
+//
+// For now, default-deny everything. Reads/writes happen via the emulator UI
+// or seed scripts using the admin SDK (which bypasses rules).
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
