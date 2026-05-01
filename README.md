@@ -40,6 +40,29 @@ npx firebase emulators:start --only auth,functions
 
 Emulator UI: http://localhost:4000
 
+## Seeding lookups
+
+The `kilns`, `firing_types`, and `programs` collections are admin-extensible at runtime, but the app expects them to exist. To seed the emulator:
+
+```sh
+# (in another terminal, with emulator already running)
+npm run seed:emulator
+```
+
+Idempotent — re-running updates fields without duplicating docs. To seed a real Firebase project:
+
+```sh
+GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account.json \
+GCLOUD_PROJECT=acai-kilns-dev \
+  node scripts/seed.mjs
+```
+
+## Tests
+
+```sh
+npm run test:rules    # spawns its own Firestore emulator and runs vitest
+```
+
 ## Build
 
 ```sh

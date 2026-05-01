@@ -1,14 +1,115 @@
 rules_version = '2';
 
-// Phase 0 stub. Hardened in phase 2 per plan §5:
-// - member/admin custom claims
-// - 24h collective edit window for firings
-// - admin-only soft-delete and lookup writes
+// Auth model per plan §5 + 2026-04-30 conversation:
+//   - `member: true` custom claim is set by Cloud Function on first sign-in
+//     after admin creates the corresponding members/{id} record.
+//   - `admin: true` custom claim is set out-of-band via Admin SDK.
+//   - Edit window for firings + tank_refills is COLLECTIVE: any authed
+//     member can edit any document within 24h of its created_at, not just
+//     the creator. Plan calls this out as a deliberate trade-off; the
+//     `updated_by` field is the only forensic trail in-window.
+//   - Soft-delete only (deleted_at). Admin-only.
+//   - Lookups (kilns, programs, firing_types) are admin-write only.
 //
-// For now, default-deny everything. Reads/writes happen via the emulator UI
-// or seed scripts using the admin SDK (which bypasses rules).
+// Schema validation lives in the application layer (composables). These
+// rules are a SECURITY boundary — who can write what — not a SCHEMA
+// boundary. Trust internal code.
+
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    function isAuthed() {
+      return request.auth != null;
+    }
+    function isMember() {
+      return isAuthed() && request.auth.token.member == true;
+    }
+    function isAdmin() {
+      return isAuthed() && request.auth.token.admin == true;
+    }
+    function isMemberOrAdmin() {
+      return isMember() || isAdmin();
+    }
+    function withinEditWindow() {
+      return resource.data.created_at != null
+        && request.time < resource.data.created_at + duration.value(24, 'h');
+    }
+    function touchesDeletedAt() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasAny(['deleted_at']);
+    }
+    function isCreator() {
+      return request.resource.data.created_by == request.auth.uid;
+    }
+
+    // ─── Lookup collections ──────────────────────────────────────────────
+    // Read for any member/admin; write admin-only.
+
+    match /kilns/{kilnId} {
+      allow read:  if isMemberOrAdmin();
+      allow write: if isAdmin();
+    }
+
+    match /programs/{programId} {
+      allow read:  if isMemberOrAdmin();
+      allow write: if isAdmin();
+    }
+
+    match /firing_types/{firingTypeId} {
+      allow read:  if isMemberOrAdmin();
+      allow write: if isAdmin();
+    }
+
+    // ─── Members ─────────────────────────────────────────────────────────
+    // Members can read the roster (needed for picker filtering by training
+    // flags). Only admins can create/edit/deactivate members.
+
+    match /members/{memberId} {
+      allow read:  if isMemberOrAdmin();
+      allow write: if isAdmin();
+    }
+
+    // ─── Firings ────────────────────────────────────────────────────────
+    // Create: any member or admin. created_by must match the caller's uid
+    // (prevents impersonation).
+    //
+    // Update: admin always; member only within 24h of created_at AND only
+    // if the write does not touch deleted_at (soft-delete is admin-only).
+    //
+    // Delete: hard-delete forbidden everywhere.
+
+    match /firings/{firingId} {
+      allow read:   if isMemberOrAdmin();
+      allow create: if isMemberOrAdmin() && isCreator();
+      allow update: if isAdmin()
+                    || (isMember() && withinEditWindow() && !touchesDeletedAt());
+      allow delete: if false;
+    }
+
+    // ─── Tank refills ───────────────────────────────────────────────────
+    // Same shape as firings.
+
+    match /tank_refills/{refillId} {
+      allow read:   if isMemberOrAdmin();
+      allow create: if isMemberOrAdmin() && isCreator();
+      allow update: if isAdmin()
+                    || (isMember() && withinEditWindow() && !touchesDeletedAt());
+      allow delete: if false;
+    }
+
+    // ─── Problems ───────────────────────────────────────────────────────
+    // Members create their own reports (reported_by = uid). Status
+    // transitions (acknowledged → resolved) and resolution edits are
+    // admin-only — kiln techs drive the queue.
+
+    match /problems/{problemId} {
+      allow read:   if isMemberOrAdmin();
+      allow create: if isMemberOrAdmin()
+                    && request.resource.data.reported_by == request.auth.uid;
+      allow update: if isAdmin();
+      allow delete: if false;
+    }
+
+    // ─── Default deny ───────────────────────────────────────────────────
     match /{document=**} {
       allow read, write: if false;
     }

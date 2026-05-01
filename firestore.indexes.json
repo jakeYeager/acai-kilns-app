@@ -1,4 +1,53 @@
 {
-  "indexes": [],
+  "indexes": [
+    {
+      "collectionGroup": "firings",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "kiln_id", "order": "ASCENDING" },
+        { "fieldPath": "start_datetime", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "firings",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "start_datetime", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "firings",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "program_label", "order": "ASCENDING" },
+        { "fieldPath": "start_datetime", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "firings",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "firing_type", "order": "ASCENDING" },
+        { "fieldPath": "start_datetime", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "firings",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "kiln_type", "order": "ASCENDING" },
+        { "fieldPath": "start_datetime", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "tank_refills",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "kiln_id", "order": "ASCENDING" },
+        { "fieldPath": "refilled_at", "order": "DESCENDING" }
+      ]
+    }
+  ],
   "fieldOverrides": []
 }
