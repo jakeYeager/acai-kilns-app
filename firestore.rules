@@ -42,10 +42,13 @@ service cloud.firestore {
     }
 
     // ─── Lookup collections ──────────────────────────────────────────────
-    // Read for any member/admin; write admin-only.
+    // Kilns are public-readable so the home-page status display works for
+    // logged-out visitors (board ask: members and trainees check kiln state
+    // without pinging Slack). Programs and firing_types stay member-only —
+    // they're internal taxonomy, not public information.
 
     match /kilns/{kilnId} {
-      allow read:  if isMemberOrAdmin();
+      allow read:  if true;
       allow write: if isAdmin();
     }
 
@@ -78,7 +81,7 @@ service cloud.firestore {
     // Delete: hard-delete forbidden everywhere.
 
     match /firings/{firingId} {
-      allow read:   if isMemberOrAdmin();
+      allow read:   if true;
       allow create: if isMemberOrAdmin() && isCreator();
       allow update: if isAdmin()
                     || (isMember() && withinEditWindow() && !touchesDeletedAt());

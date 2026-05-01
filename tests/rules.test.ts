@@ -61,13 +61,13 @@ describe('lookups (kilns/programs/firing_types)', () => {
     await seed('kilns/LG1', { id: 'LG1', type: 'electric', active: true })
     await assertSucceeds(getDoc(doc(member(), 'kilns/LG1')))
   })
-  test('unauthed read denied', async () => {
+  test('unauthed reads kilns (public status display)', async () => {
     await seed('kilns/LG1', { id: 'LG1' })
-    await assertFails(getDoc(doc(unauth(), 'kilns/LG1')))
+    await assertSucceeds(getDoc(doc(unauth(), 'kilns/LG1')))
   })
-  test('authed user without member/admin claim denied', async () => {
-    await seed('kilns/LG1', { id: 'LG1' })
-    await assertFails(getDoc(doc(stranger(), 'kilns/LG1')))
+  test('unauthed read of programs denied (members-only taxonomy)', async () => {
+    await seed('programs/p1', { label: '05 SB' })
+    await assertFails(getDoc(doc(unauth(), 'programs/p1')))
   })
   test('member write denied', async () => {
     await assertFails(
@@ -137,15 +137,24 @@ describe('firings — create', () => {
       })
     )
   })
-  test('unauthed denied', async () => {
+  test('unauthed create denied', async () => {
     await assertFails(
       setDoc(doc(unauth(), 'firings/f1'), { created_by: 'm1' })
     )
   })
-  test('authed-but-no-claim denied', async () => {
+  test('authed-but-no-claim create denied', async () => {
     await assertFails(
       setDoc(doc(stranger(), 'firings/f1'), { created_by: 'stranger' })
     )
+  })
+  test('unauthed reads firings (public kiln status)', async () => {
+    await seed('firings/f1', {
+      kiln_id: 'LG1',
+      status: 'open',
+      created_by: 'm1',
+      created_at: Timestamp.now(),
+    })
+    await assertSucceeds(getDoc(doc(unauth(), 'firings/f1')))
   })
 })
 

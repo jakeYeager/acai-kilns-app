@@ -50,11 +50,13 @@ import type { FiringMember } from '~/composables/useFirings'
 
 definePageMeta({ middleware: ['auth'] })
 
+const route = useRoute()
 const { state: memberState, isOnRoster } = useCurrentMember()
 const { electricPrograms } = useLookups()
 const { openElectricFiring } = useFirings()
 
-const kilnId = ref<string | null>(null)
+const kilnFromQuery = typeof route.query.kiln === 'string' ? route.query.kiln : null
+const kilnId = ref<string | null>(kilnFromQuery)
 const programId = ref<string | null>(null)
 const loaders = ref<FiringMember[]>([])
 const candleHrsRaw = ref<string>('')
