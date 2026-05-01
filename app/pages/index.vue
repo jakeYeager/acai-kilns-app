@@ -22,19 +22,21 @@
         </UButton>
       </section>
 
-      <section class="rounded-lg border border-gray-200 bg-white p-4">
-        <h2 class="text-sm font-medium text-gray-500">Phase 0 / 3a wiring check</h2>
-        <ul class="mt-2 space-y-1 text-sm">
-          <li>Project: <code class="text-xs">{{ projectId }}</code></li>
-          <li>Emulator mode: <code class="text-xs">{{ useEmulators ? 'on' : 'off' }}</code></li>
-          <li>Member doc: <code class="text-xs">{{ state.member?.id }}</code></li>
-          <li>Role: <code class="text-xs">{{ state.role }}</code></li>
-        </ul>
-      </section>
+      <UButton to="/firing/new" block size="lg">
+        Start a firing
+      </UButton>
 
-      <p class="text-sm text-gray-500">
-        Firing flows arrive in phase 4.
-      </p>
+      <InProgressList />
+
+      <details class="rounded-lg border border-gray-200 bg-white p-3 text-xs text-gray-600">
+        <summary class="cursor-pointer text-gray-500">Diagnostics</summary>
+        <ul class="mt-2 space-y-1">
+          <li>Project: <code>{{ projectId }}</code></li>
+          <li>Emulator mode: <code>{{ useEmulators ? 'on' : 'off' }}</code></li>
+          <li>Member doc: <code>{{ state.member?.id }}</code></li>
+          <li>Role: <code>{{ state.role }}</code></li>
+        </ul>
+      </details>
     </template>
 
     <!-- 3. Authed but NOT on the roster -->
