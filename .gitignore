@@ -27,8 +27,6 @@ emulator-ui/
 # Emulator export data (regenerate locally; not part of repo state)
 .emulator-data/
 
-# Functions local lockfile (npm 9+ deduplicates predictably; revisit if CI drifts)
-/functions/package-lock.json
 /functions/.env
 
 # Local env (NEVER commit secrets)
