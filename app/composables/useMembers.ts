@@ -1,9 +1,6 @@
 import {
   collection,
   onSnapshot,
-  query,
-  where,
-  orderBy,
   type Unsubscribe,
 } from 'firebase/firestore'
 import type { MemberDoc } from './useCurrentMember'
@@ -14,6 +11,7 @@ export interface MemberSummary {
   email: string
   role: 'admin' | 'member'
   training: MemberDoc['training']
+  active: boolean
 }
 
 interface MembersState {
@@ -31,24 +29,26 @@ export const useMembers = () => {
     ;(window as { __kilns_members_wired__?: boolean }).__kilns_members_wired__ = true
 
     const { firestore } = useFirebase()
+    // Small roster (<~50). Fetch the whole collection and filter/sort
+    // client-side to avoid the composite-index requirement.
     const sub: Unsubscribe = onSnapshot(
-      query(
-        collection(firestore, 'members'),
-        where('active', '==', true),
-        orderBy('display_name')
-      ),
+      collection(firestore, 'members'),
       (snap) => {
         state.value = {
-          members: snap.docs.map((d) => {
-            const data = d.data() as MemberDoc
-            return {
-              id: d.id,
-              display_name: data.display_name,
-              email: data.email,
-              role: data.role || 'member',
-              training: data.training || {},
-            }
-          }),
+          members: snap.docs
+            .map((d) => {
+              const data = d.data() as MemberDoc
+              return {
+                id: d.id,
+                display_name: data.display_name,
+                email: data.email,
+                role: data.role || 'member',
+                training: data.training || {},
+                active: data.active !== false,
+              }
+            })
+            .filter((m) => m.active)
+            .sort((a, b) => a.display_name.localeCompare(b.display_name)),
           loading: false,
         }
       },

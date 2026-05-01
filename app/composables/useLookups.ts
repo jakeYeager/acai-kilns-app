@@ -1,9 +1,6 @@
 import {
   collection,
   onSnapshot,
-  query,
-  where,
-  orderBy,
   type Unsubscribe,
 } from 'firebase/firestore'
 
@@ -60,9 +57,13 @@ export const useLookups = () => {
       }
     }
 
+    // Lookups are small (~4-10 docs each) so we fetch the whole collection
+    // and filter/sort client-side. Avoids needing a composite index for the
+    // active-filter + display-name-order combination.
+
     subs.push(
       onSnapshot(
-        query(collection(firestore, 'kilns'), where('active', '==', true), orderBy('display_name')),
+        collection(firestore, 'kilns'),
         (snap) => {
           state.value = {
             ...state.value,
@@ -79,7 +80,7 @@ export const useLookups = () => {
 
     subs.push(
       onSnapshot(
-        query(collection(firestore, 'programs'), where('active', '==', true), orderBy('label')),
+        collection(firestore, 'programs'),
         (snap) => {
           state.value = {
             ...state.value,
@@ -96,7 +97,7 @@ export const useLookups = () => {
 
     subs.push(
       onSnapshot(
-        query(collection(firestore, 'firing_types'), where('active', '==', true), orderBy('label')),
+        collection(firestore, 'firing_types'),
         (snap) => {
           state.value = {
             ...state.value,
@@ -112,10 +113,22 @@ export const useLookups = () => {
     )
   }
 
-  const electricKilns = computed(() => state.value.kilns.filter((k) => k.type === 'electric'))
-  const gasPropaneKilns = computed(() => state.value.kilns.filter((k) => k.type === 'gas_propane'))
-  const electricPrograms = computed(() => state.value.programs.filter((p) => p.kiln_type === 'electric'))
-  const rakuFiringTypes = computed(() => state.value.firingTypes.filter((t) => t.kiln_type === 'gas_propane'))
+  const byDisplay = (a: { display_name: string }, b: { display_name: string }) =>
+    a.display_name.localeCompare(b.display_name)
+  const byLabel = (a: { label: string }, b: { label: string }) => a.label.localeCompare(b.label)
+
+  const electricKilns = computed(() =>
+    state.value.kilns.filter((k) => k.active && k.type === 'electric').sort(byDisplay)
+  )
+  const gasPropaneKilns = computed(() =>
+    state.value.kilns.filter((k) => k.active && k.type === 'gas_propane').sort(byDisplay)
+  )
+  const electricPrograms = computed(() =>
+    state.value.programs.filter((p) => p.active && p.kiln_type === 'electric').sort(byLabel)
+  )
+  const rakuFiringTypes = computed(() =>
+    state.value.firingTypes.filter((t) => t.active && t.kiln_type === 'gas_propane').sort(byLabel)
+  )
 
   return {
     state: readonly(state),
