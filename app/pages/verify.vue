@@ -53,7 +53,10 @@ async function attempt(email: string) {
   } catch (err: any) {
     console.error('[auth] signInWithEmailLink failed', err)
     status.value = 'error'
-    errorMessage.value = err?.message || 'Could not complete sign-in. Request a new link from the home screen.'
+    errorMessage.value =
+      err?.code === 'auth/invalid-action-code'
+        ? 'This sign-in link has already been used or has expired. Request a new one from the home screen.'
+        : err?.message || 'Could not complete sign-in. Request a new link from the home screen.'
   }
 }
 
