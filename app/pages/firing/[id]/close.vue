@@ -43,11 +43,13 @@
       <DateTimePicker v-model="unloadDateTime" label="Unload time" />
 
       <div>
-        <p class="text-sm font-medium text-gray-700">Firing duration</p>
-        <p class="text-xs text-gray-500">Computed from start ↔ unload. Override if needed.</p>
+        <p class="text-sm font-medium text-gray-700">Firing duration <span class="text-gray-400">(HH:MM)</span></p>
+        <p class="text-xs text-gray-500">From the kiln controller display.</p>
         <UInput
           v-model="firingHhMm"
-          placeholder="HH:MM"
+          placeholder="e.g. 12:23"
+          inputmode="numeric"
+          required
           size="lg"
           class="mt-1"
         />
@@ -74,7 +76,7 @@ const route = useRoute()
 const id = computed(() => String(route.params.id))
 
 const { state: memberState } = useCurrentMember()
-const { closeElectricFiring, watchFiring, minutesBetween, formatHhMm } = useFirings()
+const { closeElectricFiring, watchFiring } = useFirings()
 
 const firing = ref<FiringEntry | null>(null)
 const loading = ref(true)
@@ -111,22 +113,15 @@ watchEffect(() => {
   if (firing.value.notes) notes.value = firing.value.notes
 })
 
-// Recompute firing_hh_mm whenever unload datetime changes (until user manually edits).
-const userTouchedHhMm = ref(false)
-watch(firingHhMm, (_v, oldV) => {
-  if (oldV !== '' && oldV !== firingHhMm.value) userTouchedHhMm.value = true
-})
-watchEffect(() => {
-  if (!firing.value || !unloadDateTime.value || userTouchedHhMm.value) return
-  const totalMinutes = minutesBetween(firing.value.start_datetime.toDate(), unloadDateTime.value)
-  firingHhMm.value = formatHhMm(Math.max(0, totalMinutes))
-})
+const hhMmPattern = /^\d{1,3}:\d{1,2}(?::\d{1,2})?$/
+const firingHhMmValid = computed(() => hhMmPattern.test(firingHhMm.value.trim()))
 
 const canSubmit = computed(() => {
   return Boolean(
     firing.value &&
       unloaders.value.length &&
       unloadDateTime.value &&
+      firingHhMmValid.value &&
       !submitting.value
   )
 })
@@ -141,7 +136,7 @@ async function onSubmit() {
       unloaders: unloaders.value,
       unload_datetime: unloadDateTime.value!,
       ...(unload_temp != null && !Number.isNaN(unload_temp) ? { unload_temp } : {}),
-      ...(firingHhMm.value ? { firing_hh_mm: firingHhMm.value } : {}),
+      firing_hh_mm: firingHhMm.value.trim(),
       ...(notes.value ? { notes: notes.value } : {}),
     })
     await navigateTo(`/firing/${id.value}`)

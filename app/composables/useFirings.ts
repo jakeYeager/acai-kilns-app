@@ -63,18 +63,15 @@ export interface CloseElectricInput {
   unloaders: FiringMember[]
   unload_datetime: Date
   unload_temp?: number
-  firing_hh_mm?: string
+  firing_hh_mm: string  // Required: from the kiln controller display, not page-derived.
   notes?: string
 }
 
-function minutesBetween(start: Date, end: Date): number {
-  return Math.round((end.getTime() - start.getTime()) / 60000)
-}
-
-function formatHhMm(totalMinutes: number): string {
-  const h = Math.floor(totalMinutes / 60)
-  const m = totalMinutes % 60
-  return `${h}:${String(m).padStart(2, '0')}`
+function parseHhMmToMinutes(hhmm: string): number {
+  // Accept "H:MM", "HH:MM", or "HH:MM:SS" — historical CSV mixes the two.
+  const m = hhmm.trim().match(/^(\d{1,3}):(\d{1,2})(?::\d{1,2})?$/)
+  if (!m) throw new Error(`Invalid HH:MM format: "${hhmm}"`)
+  return parseInt(m[1]!, 10) * 60 + parseInt(m[2]!, 10)
 }
 
 export const useFirings = () => {
@@ -149,16 +146,17 @@ export const useFirings = () => {
     const existing = snap.data() as FiringDoc
     if (existing.status !== 'open') throw new Error('firing is not open')
 
-    const startDate = existing.start_datetime.toDate()
-    const totalMinutes = minutesBetween(startDate, input.unload_datetime)
-    const firing_hh_mm = input.firing_hh_mm || formatHhMm(Math.max(0, totalMinutes))
-    const firing_minutes = Math.max(0, totalMinutes)
+    // firing_minutes is derived from the user-entered HH:MM (kiln controller
+    // reading), not from the wall-clock delta between start_datetime and
+    // unload_datetime. The wall-clock approach over-counted candle time and
+    // didn't match what the controller showed.
+    const firing_minutes = parseHhMmToMinutes(input.firing_hh_mm)
 
     await updateDoc(ref, {
       unloaders: input.unloaders,
       unload_datetime: Timestamp.fromDate(input.unload_datetime),
       ...(input.unload_temp != null ? { unload_temp: input.unload_temp } : {}),
-      firing_hh_mm,
+      firing_hh_mm: input.firing_hh_mm.trim(),
       firing_minutes,
       ...(input.notes ? { notes: input.notes } : {}),
       status: 'closed',
@@ -188,7 +186,6 @@ export const useFirings = () => {
     closeElectricFiring,
     getFiring,
     watchFiring,
-    minutesBetween,
-    formatHhMm,
+    parseHhMmToMinutes,
   }
 }
