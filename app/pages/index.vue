@@ -1,67 +1,65 @@
 <template>
   <div class="space-y-6">
-    <!-- 1. Loading state -->
-    <div v-if="state.loading" class="rounded-lg border border-gray-200 bg-white p-4 text-sm text-gray-500">
-      Loading…
-    </div>
+    <!-- Authed header (welcome + sign out) -->
+    <section v-if="isOnRoster" class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-semibold">
+          Welcome, {{ state.member?.display_name }}
+        </h1>
+        <p class="mt-1 text-sm text-gray-600">
+          Signed in as <code class="text-xs">{{ state.user?.email }}</code>
+          <span v-if="isAdmin" class="ml-2 rounded bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-700">admin</span>
+        </p>
+      </div>
+      <UButton size="sm" variant="ghost" @click="onSignOut">Sign out</UButton>
+    </section>
 
-    <!-- 2. Authed + on roster -->
-    <template v-else-if="isOnRoster">
-      <section class="flex items-center justify-between">
-        <div>
-          <h1 class="text-2xl font-semibold">
-            Welcome, {{ state.member?.display_name }}
-          </h1>
-          <p class="mt-1 text-sm text-gray-600">
-            Signed in as <code class="text-xs">{{ state.user?.email }}</code>
-            <span v-if="isAdmin" class="ml-2 rounded bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-700">admin</span>
-          </p>
-        </div>
-        <UButton size="sm" variant="ghost" @click="onSignOut">
-          Sign out
-        </UButton>
-      </section>
-
-      <UButton to="/firing/new" block size="lg">
-        Start a firing
+    <!-- Off-roster banner (authed but no member doc) -->
+    <section
+      v-else-if="isOffRoster"
+      class="rounded-lg border border-amber-200 bg-amber-50 p-4"
+    >
+      <h1 class="text-lg font-semibold text-amber-900">You're not on the roster</h1>
+      <p class="mt-1 text-sm text-amber-800">
+        You're signed in as <code class="text-xs">{{ state.user?.email }}</code>, but no member record matches that address.
+      </p>
+      <p class="mt-2 text-sm text-amber-800">
+        Ask an admin to add you. Once they do, sign out and back in.
+      </p>
+      <UButton class="mt-3" size="sm" variant="solid" @click="onSignOut">
+        Sign out
       </UButton>
+    </section>
 
-      <InProgressList />
+    <!-- Public landing header for unauthed visitors -->
+    <section v-else>
+      <h1 class="text-2xl font-semibold">ACAI Kilns</h1>
+      <p class="mt-1 text-sm text-gray-600">
+        Live kiln status. Sign in below to start firings or report problems.
+      </p>
+    </section>
 
-      <details class="rounded-lg border border-gray-200 bg-white p-3 text-xs text-gray-600">
-        <summary class="cursor-pointer text-gray-500">Diagnostics</summary>
-        <ul class="mt-2 space-y-1">
-          <li>Project: <code>{{ projectId }}</code></li>
-          <li>Emulator mode: <code>{{ useEmulators ? 'on' : 'off' }}</code></li>
-          <li>Member doc: <code>{{ state.member?.id }}</code></li>
-          <li>Role: <code>{{ state.role }}</code></li>
-        </ul>
-      </details>
-    </template>
+    <!-- Kiln status grid — visible to everyone -->
+    <section>
+      <h2 class="mb-2 text-sm font-medium text-gray-500">Electric kilns</h2>
+      <div v-if="kilnsLoading" class="rounded-lg border border-gray-200 bg-white p-4 text-sm text-gray-500">
+        Loading…
+      </div>
+      <div v-else-if="!electricKilns.length" class="rounded-lg border border-dashed border-gray-200 bg-white p-4 text-sm text-gray-500">
+        No active electric kilns.
+      </div>
+      <div v-else class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <KilnCard
+          v-for="kiln in electricKilns"
+          :key="kiln.id"
+          :kiln="kiln"
+          :firing="openFiringsByKiln[kiln.id] || null"
+        />
+      </div>
+    </section>
 
-    <!-- 3. Authed but NOT on the roster -->
-    <template v-else-if="isOffRoster">
-      <section class="rounded-lg border border-amber-200 bg-amber-50 p-4">
-        <h1 class="text-lg font-semibold text-amber-900">You're not on the roster</h1>
-        <p class="mt-1 text-sm text-amber-800">
-          You're signed in as <code class="text-xs">{{ state.user?.email }}</code>, but no member record matches that address.
-        </p>
-        <p class="mt-2 text-sm text-amber-800">
-          Ask an admin to add you. Once they do, sign out and back in.
-        </p>
-        <UButton class="mt-3" size="sm" variant="solid" @click="onSignOut">
-          Sign out
-        </UButton>
-      </section>
-    </template>
-
-    <!-- 4. Unauthed: landing form -->
-    <template v-else>
-      <section>
-        <h1 class="text-2xl font-semibold">ACAI Kilns</h1>
-        <p class="mt-1 text-sm text-gray-600">Sign in with your studio email.</p>
-      </section>
-
+    <!-- Sign-in form — only for unauthed visitors -->
+    <template v-if="!state.loading && !state.user">
       <section
         v-if="linkSent"
         class="rounded-lg border border-emerald-200 bg-emerald-50 p-4"
@@ -81,6 +79,8 @@
         class="space-y-4 rounded-lg border border-gray-200 bg-white p-4"
         @submit.prevent="onSubmit"
       >
+        <h2 class="text-sm font-medium text-gray-700">Sign in with your studio email</h2>
+
         <UFormGroup label="Email" name="email">
           <UInput
             v-model="email"
@@ -110,6 +110,20 @@
         </UButton>
       </form>
     </template>
+
+    <!-- Diagnostics (authed only) -->
+    <details
+      v-if="isOnRoster"
+      class="rounded-lg border border-gray-200 bg-white p-3 text-xs text-gray-600"
+    >
+      <summary class="cursor-pointer text-gray-500">Diagnostics</summary>
+      <ul class="mt-2 space-y-1">
+        <li>Project: <code>{{ projectId }}</code></li>
+        <li>Emulator mode: <code>{{ useEmulators ? 'on' : 'off' }}</code></li>
+        <li>Member doc: <code>{{ state.member?.id }}</code></li>
+        <li>Role: <code>{{ state.role }}</code></li>
+      </ul>
+    </details>
   </div>
 </template>
 
@@ -117,12 +131,23 @@
 import { sendSignInLinkToEmail } from 'firebase/auth'
 
 const { state, isOnRoster, isOffRoster, isAdmin, signOut } = useCurrentMember()
+const { electricKilns, state: lookupState } = useLookups()
+const { inProgress } = useFirings()
 const config = useRuntimeConfig()
 
 const projectId = computed(
   () => (config.public.firebase as { projectId?: string }).projectId || '—'
 )
 const useEmulators = computed(() => Boolean(config.public.useEmulators))
+const kilnsLoading = computed(() => lookupState.value.loading)
+
+const openFiringsByKiln = computed(() => {
+  const map: Record<string, (typeof inProgress.value)[number]> = {}
+  for (const f of inProgress.value) {
+    if (!map[f.kiln_id]) map[f.kiln_id] = f
+  }
+  return map
+})
 
 const email = ref('')
 const turnstileToken = ref('')

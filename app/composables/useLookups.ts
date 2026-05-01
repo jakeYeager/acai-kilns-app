@@ -1,3 +1,4 @@
+import { onAuthStateChanged } from 'firebase/auth'
 import {
   collection,
   onSnapshot,
@@ -46,8 +47,7 @@ export const useLookups = () => {
   if (import.meta.client && !(window as { __kilns_lookups_wired__?: boolean }).__kilns_lookups_wired__) {
     ;(window as { __kilns_lookups_wired__?: boolean }).__kilns_lookups_wired__ = true
 
-    const { firestore } = useFirebase()
-    const subs: Unsubscribe[] = []
+    const { auth, firestore } = useFirebase()
     const flags = { kilns: false, programs: false, firingTypes: false }
 
     const markLoaded = (key: keyof typeof flags) => {
@@ -61,25 +61,32 @@ export const useLookups = () => {
     // and filter/sort client-side. Avoids needing a composite index for the
     // active-filter + display-name-order combination.
 
-    subs.push(
-      onSnapshot(
-        collection(firestore, 'kilns'),
-        (snap) => {
-          state.value = {
-            ...state.value,
-            kilns: snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<KilnDoc, 'id'>) })),
-          }
-          markLoaded('kilns')
-        },
-        (err) => {
-          console.warn('[lookups] kilns subscription error', err)
-          markLoaded('kilns')
+    // Kilns are public-readable (so the home-page status display works for
+    // logged-out visitors). Programs and firing_types are member-only — only
+    // wire those subscriptions once the user is authed, otherwise they
+    // log permission-denied warnings on every public page load.
+
+    onSnapshot(
+      collection(firestore, 'kilns'),
+      (snap) => {
+        state.value = {
+          ...state.value,
+          kilns: snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<KilnDoc, 'id'>) })),
         }
-      )
+        markLoaded('kilns')
+      },
+      (err) => {
+        console.warn('[lookups] kilns subscription error', err)
+        markLoaded('kilns')
+      }
     )
 
-    subs.push(
-      onSnapshot(
+    let programsUnsub: Unsubscribe | null = null
+    let firingTypesUnsub: Unsubscribe | null = null
+
+    const wireMemberOnly = () => {
+      if (programsUnsub) return
+      programsUnsub = onSnapshot(
         collection(firestore, 'programs'),
         (snap) => {
           state.value = {
@@ -93,10 +100,7 @@ export const useLookups = () => {
           markLoaded('programs')
         }
       )
-    )
-
-    subs.push(
-      onSnapshot(
+      firingTypesUnsub = onSnapshot(
         collection(firestore, 'firing_types'),
         (snap) => {
           state.value = {
@@ -110,7 +114,20 @@ export const useLookups = () => {
           markLoaded('firingTypes')
         }
       )
-    )
+    }
+
+    const unwireMemberOnly = () => {
+      if (programsUnsub) { programsUnsub(); programsUnsub = null }
+      if (firingTypesUnsub) { firingTypesUnsub(); firingTypesUnsub = null }
+      state.value = { ...state.value, programs: [], firingTypes: [] }
+      markLoaded('programs')
+      markLoaded('firingTypes')
+    }
+
+    onAuthStateChanged(auth, (user) => {
+      if (user) wireMemberOnly()
+      else unwireMemberOnly()
+    })
   }
 
   const byDisplay = (a: { display_name: string }, b: { display_name: string }) =>

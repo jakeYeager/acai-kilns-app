@@ -24,32 +24,32 @@ This is a public repo — all secrets live in `.env` (gitignored) or Firebase Se
 
 ## Development
 
-```sh
-nvm use            # switch to Node 22
-npm install
-npm run dev        # nuxt dev on http://localhost:3000
-```
-
-In a second terminal, start the Firebase Local Emulator Suite:
+First-time setup (in this order — each step depends on the previous):
 
 ```sh
-npm run emulators       # auth + firestore + functions + hosting + UI
-# or, without Java:
-npx firebase emulators:start --only auth,functions
+nvm use                                                          # 1. Node 22
+npm install                                                      # 2. deps
+npm run emulators                                                # 3. emulators (terminal A)
+npm run seed:emulator                                            # 4. lookups (terminal B, one-shot)
+npm run bootstrap-admin:emulator -- --email you@example.com --name "Your Name"  # 5. your admin row
+npm run dev                                                      # 6. app on http://localhost:3000 (terminal B)
 ```
 
-Emulator UI: http://localhost:4000
+Order matters: the emulator must be running before `seed`/`bootstrap-admin` can write to it, and your admin row must exist before sign-in lands you anywhere except the off-roster screen.
+
+`npm run emulators` runs the full suite (auth + firestore + functions + hosting + UI) and imports/exports state from `./.emulator-data` so seeded lookups and your admin row survive restarts. UI: http://localhost:4000.
+
+Sign-in flow against the emulator: enter your email on the landing page, then grep the **emulator stdout** for the magic link (e.g. `grep "sign-in link" terminal-A`) and paste it into the browser. No real email is sent in emulator mode, and the Auth UI tab shows users but not pending email-link tokens.
+
+### Local dev troubleshooting
+
+- **"Port 5000 is not open" on macOS** — macOS Control Center / AirPlay Receiver squats on port 5000. The Hosting emulator is mapped to **5050** in `firebase.json` to avoid this. If you still see a port collision, either change the port again or disable AirPlay Receiver in System Settings → General → AirDrop & Handoff.
+- **"You're not on the roster" after signing in** — means the app reached Firestore but found no `members` doc matching your auth user. Either you skipped `bootstrap-admin:emulator`, the Firestore emulator isn't running (rerun `npm run emulators` and confirm port 8080 in `lsof -i:8080`), or you signed in with a different email than you bootstrapped.
+- **Java not found** — `java -version` should report 11+. Install Temurin JDK 17 from https://adoptium.net/temurin/releases/?version=17&os=mac&package=jdk. If you only need a partial setup, `npx firebase emulators:start --only auth,functions` runs without Java — but skipping Firestore guarantees the off-roster screen.
 
 ## Seeding lookups
 
-The `kilns`, `firing_types`, and `programs` collections are admin-extensible at runtime, but the app expects them to exist. To seed the emulator:
-
-```sh
-# (in another terminal, with emulator already running)
-npm run seed:emulator
-```
-
-Idempotent — re-running updates fields without duplicating docs. To seed a real Firebase project:
+`npm run seed:emulator` is idempotent — re-running updates fields without duplicating docs. To seed a real Firebase project:
 
 ```sh
 GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account.json \
