@@ -63,6 +63,24 @@ GCLOUD_PROJECT=acai-kilns-dev \
 npm run test:rules    # spawns its own Firestore emulator and runs vitest
 ```
 
+## Bootstrapping the first admin
+
+After phase 3a is deployed, the app needs at least one `members` record with `role: 'admin'` before anyone can sign in (otherwise `onUserCreate` finds no match and the user lands on the off-roster screen). One-time:
+
+```sh
+GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account.json \
+GCLOUD_PROJECT=acai-kilns-dev \
+  node scripts/bootstrap-admin.mjs --email you@example.com --name "Your Name"
+```
+
+Idempotent. Adds another admin by re-running with their email + name. Members (non-admins) get added the same way with `--role member`, but typically that goes through the `/admin` UI once phase 10 ships.
+
+For local emulator testing:
+
+```sh
+npm run bootstrap-admin:emulator -- --email you@example.com --name "Your Name"
+```
+
 ## Build
 
 ```sh

@@ -82,6 +82,10 @@ jobs:
           echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/sa.json" >> "$GITHUB_ENV"
       - name: Deploy Firestore rules + indexes
         run: npx firebase deploy --only firestore --project "$FIREBASE_PROJECT" --non-interactive
+      - name: Build Cloud Functions (TypeScript)
+        run: npm --prefix functions ci --no-audit --no-fund && npm --prefix functions run build
+      - name: Deploy Cloud Functions
+        run: npx firebase deploy --only functions --project "$FIREBASE_PROJECT" --non-interactive
       - name: Cleanup credentials
         if: always()
         run: rm -f "$RUNNER_TEMP/sa.json"

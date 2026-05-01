@@ -16,7 +16,8 @@
     "test:rules": "firebase emulators:exec --only firestore --project demo-acai-kilns 'vitest run tests/rules.test.ts'",
     "emulators": "firebase emulators:start --import=./.emulator-data --export-on-exit",
     "emulators:fresh": "firebase emulators:start",
-    "seed:emulator": "FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 GCLOUD_PROJECT=acai-kilns-dev node scripts/seed.mjs"
+    "seed:emulator": "FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 GCLOUD_PROJECT=acai-kilns-dev node scripts/seed.mjs",
+    "bootstrap-admin:emulator": "FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 GCLOUD_PROJECT=acai-kilns-dev node scripts/bootstrap-admin.mjs"
   },
   "dependencies": {
     "@nuxt/ui": "^2.18.7",

@@ -29,7 +29,7 @@ These are decided.
 - **Frontend:** Nuxt 3 + Nuxt UI. SPA mode (`ssr: false`). File-based routing under `pages/`. TypeScript throughout.
 - **Modules:** `nuxt-vuefire` (Firebase SDK + Auth), `@nuxtjs/turnstile` (Cloudflare Turnstile), `@vite-pwa/nuxt` (PWA + offline).
 - **Backend:** Firebase — Hosting + Firestore + Cloud Functions + Auth.
-- **Auth:** **Email-link (passwordless) + Turnstile + long-lived session, against an admin-curated `members` roster.** No self-onboarding — only members the admins have provisioned can sign in. Admins use Google Sign-In with `admin: true` custom claim.
+- **Auth:** **Email-link (passwordless) + Turnstile + long-lived session, against an admin-curated `members` roster.** No self-onboarding — only members the admins have provisioned can sign in. **Admins use the same email-link flow** (revised 2026-05-01); the `admin: true` custom claim is set by `onUserCreate` Cloud Function based on `members.role === 'admin'`. No Google Sign-In path.
 - **State:** Pinia or composables. No Vuex.
 - **Public GitHub repo.** ACAI is a nonprofit. All org-specific values live in `.env`. Firestore rules are committed (security boundary, not secret). Service-account JSONs and Slack webhook URLs are *never* committed.
 
