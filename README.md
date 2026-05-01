@@ -39,7 +39,7 @@ Order matters: the emulator must be running before `seed`/`bootstrap-admin` can 
 
 `npm run emulators` runs the full suite (auth + firestore + functions + hosting + UI) and imports/exports state from `./.emulator-data` so seeded lookups and your admin row survive restarts. UI: http://localhost:4000.
 
-Sign-in flow against the emulator: enter your email on the landing page, then check the **emulator UI's Auth tab** for the magic link (no email is actually sent in emulator mode) and paste it into the browser.
+Sign-in flow against the emulator: enter your email on the landing page, then grep the **emulator stdout** for the magic link (e.g. `grep "sign-in link" terminal-A`) and paste it into the browser. No real email is sent in emulator mode, and the Auth UI tab shows users but not pending email-link tokens.
 
 ### Local dev troubleshooting
 
