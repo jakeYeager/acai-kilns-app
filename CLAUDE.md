@@ -83,7 +83,7 @@ Webhook-only — no full Slack bot in v1. Outbound posts only, no interactive re
 
 ## Outstanding pre-build tasks (Jake owes these before v1 can ship)
 
-- 🟡 Create Slack channels (`#kiln-reports`, `#webapp-alerts`, `#kiln-tech`) and Incoming Webhooks
+- ✅ Create Slack channels (`#kiln-reports`, `#webapp-alerts`, `#kiln-tech`) and Incoming Webhooks (done 2026-05-01; URLs stored in Firebase Secret Manager as `SLACK_WEBHOOK_KILN_REPORTS`, `SLACK_WEBHOOK_WEBAPP_ALERTS`, `SLACK_WEBHOOK_KILN_TECH`; same URLs reused for prod for now since Jake is the only consumer)
 - 🟡 Verify Google for Nonprofits + Cloud nonprofit credits with the ED / Workspace admin
 - ✅ Contact Kiln Fire re: roadmap (done 2026-04-30)
 
