@@ -99,7 +99,6 @@ async function onSubmit() {
     const candle_hrs = candleHrsRaw.value ? parseFloat(candleHrsRaw.value) : undefined
     await openElectricFiring({
       kiln_id: kilnId.value!,
-      kiln_type: 'electric',
       cone: program.cone,
       program: program.program,
       loaders: loaders.value,

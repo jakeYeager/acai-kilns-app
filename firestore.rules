@@ -71,7 +71,11 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // ─── Firings ────────────────────────────────────────────────────────
+    // ─── Firings (electric only) ─────────────────────────────────────────
+    // Two-stage cycle: open (loaders) → close (unloaders). The gas / raku
+    // event lives in `burns` because the lifecycle and shape are different
+    // (single-stage, observed in real time).
+    //
     // Create: any member or admin. created_by must match the caller's uid
     // (prevents impersonation).
     //
@@ -88,11 +92,25 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // ─── Burns (gas / raku, single-stage) ────────────────────────────────
+    // Closed-on-create. Same auth shape as firings — public read so the
+    // home page status display works for logged-out trainees.
+
+    match /burns/{burnId} {
+      allow read:   if true;
+      allow create: if isMemberOrAdmin() && isCreator();
+      allow update: if isAdmin()
+                    || (isMember() && withinEditWindow() && !touchesDeletedAt());
+      allow delete: if false;
+    }
+
     // ─── Tank refills ───────────────────────────────────────────────────
-    // Same shape as firings.
+    // Public read so the TankStatusTile can render for anyone (members and
+    // trainees both want to know "is RK1 fuelable today?"). Writes stay
+    // member-gated.
 
     match /tank_refills/{refillId} {
-      allow read:   if isMemberOrAdmin();
+      allow read:   if true;
       allow create: if isMemberOrAdmin() && isCreator();
       allow update: if isAdmin()
                     || (isMember() && withinEditWindow() && !touchesDeletedAt());

@@ -228,6 +228,93 @@ describe('firings — soft-delete & hard-delete', () => {
   })
 })
 
+// ─── Burns (gas / raku) ──────────────────────────────────────────────────
+
+describe('burns — create', () => {
+  test('member creates burn with created_by = self', async () => {
+    await assertSucceeds(
+      setDoc(doc(member('m1'), 'burns/b1'), {
+        kiln_id: 'RK1',
+        firing_type: 'Raku',
+        target_cone: '06',
+        operators: [{ member_id: 'm1', display_name: 'Janet' }],
+        created_by: 'm1',
+        created_at: Timestamp.now(),
+        start_datetime: Timestamp.now(),
+        firing_hh_mm: '0:42',
+        firing_minutes: 42,
+      })
+    )
+  })
+  test('member cannot impersonate', async () => {
+    await assertFails(
+      setDoc(doc(member('m1'), 'burns/b1'), {
+        kiln_id: 'RK1',
+        created_by: 'someone-else',
+      })
+    )
+  })
+  test('unauthed create denied', async () => {
+    await assertFails(
+      setDoc(doc(unauth(), 'burns/b1'), { kiln_id: 'RK1', created_by: 'm1' })
+    )
+  })
+  test('unauthed reads burns (public kiln status)', async () => {
+    await seed('burns/b1', {
+      kiln_id: 'RK1',
+      created_by: 'm1',
+      created_at: Timestamp.now(),
+    })
+    await assertSucceeds(getDoc(doc(unauth(), 'burns/b1')))
+  })
+})
+
+describe('burns — 24h collective edit window', () => {
+  test('any member can edit any burn within 24h', async () => {
+    await seed('burns/b1', {
+      created_by: 'm1',
+      created_at: hoursAgo(2),
+    })
+    await assertSucceeds(
+      updateDoc(doc(member('m2'), 'burns/b1'), { time_to_qi: 18 })
+    )
+  })
+  test('member denied past 24h', async () => {
+    await seed('burns/b1', {
+      created_by: 'm1',
+      created_at: hoursAgo(25),
+    })
+    await assertFails(
+      updateDoc(doc(member('m2'), 'burns/b1'), { time_to_qi: 18 })
+    )
+  })
+  test('admin can edit past 24h', async () => {
+    await seed('burns/b1', {
+      created_by: 'm1',
+      created_at: hoursAgo(72),
+    })
+    await assertSucceeds(
+      updateDoc(doc(admin(), 'burns/b1'), { time_to_qi: 18 })
+    )
+  })
+  test('member cannot soft-delete (admin-only)', async () => {
+    await seed('burns/b1', {
+      created_by: 'm1',
+      created_at: hoursAgo(1),
+    })
+    await assertFails(
+      updateDoc(doc(member('m1'), 'burns/b1'), { deleted_at: Timestamp.now() })
+    )
+  })
+  test('hard-delete forbidden for everyone', async () => {
+    await seed('burns/b1', {
+      created_by: 'm1',
+      created_at: hoursAgo(1),
+    })
+    await assertFails(deleteDoc(doc(admin(), 'burns/b1')))
+  })
+})
+
 // ─── Tank refills ────────────────────────────────────────────────────────
 
 describe('tank_refills', () => {
@@ -239,7 +326,7 @@ describe('tank_refills', () => {
         created_by: 'm1',
         created_at: Timestamp.now(),
         gallons: 4.6,
-        firings_since_last: 4,
+        burns_since_last: 4,
         total_minutes_since_last: 160,
       })
     )
@@ -252,6 +339,24 @@ describe('tank_refills', () => {
     })
     await assertSucceeds(
       updateDoc(doc(member('m2'), 'tank_refills/r1'), { gallons: 4.7 })
+    )
+  })
+  test('unauthed reads tank_refills (public TankStatusTile)', async () => {
+    await seed('tank_refills/r1', {
+      kiln_id: 'RK1',
+      created_by: 'm1',
+      created_at: Timestamp.now(),
+      gallons: 4.6,
+    })
+    await assertSucceeds(getDoc(doc(unauth(), 'tank_refills/r1')))
+  })
+  test('unauthed write denied', async () => {
+    await assertFails(
+      setDoc(doc(unauth(), 'tank_refills/r1'), {
+        kiln_id: 'RK1',
+        created_by: 'm1',
+        gallons: 4.6,
+      })
     )
   })
 })

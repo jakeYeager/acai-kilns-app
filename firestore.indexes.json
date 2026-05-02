@@ -25,18 +25,18 @@
       ]
     },
     {
-      "collectionGroup": "firings",
+      "collectionGroup": "burns",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "firing_type", "order": "ASCENDING" },
+        { "fieldPath": "kiln_id", "order": "ASCENDING" },
         { "fieldPath": "start_datetime", "order": "DESCENDING" }
       ]
     },
     {
-      "collectionGroup": "firings",
+      "collectionGroup": "burns",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "kiln_type", "order": "ASCENDING" },
+        { "fieldPath": "firing_type", "order": "ASCENDING" },
         { "fieldPath": "start_datetime", "order": "DESCENDING" }
       ]
     },

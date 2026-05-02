@@ -18,16 +18,15 @@ export interface FiringMember {
   display_name: string
 }
 
+// Electric only — gas / raku events live in `useBurns` (different lifecycle:
+// closed-on-create, no loaders/unloaders split, target_cone instead of program).
 export interface FiringDoc {
   kiln_id: string
-  kiln_type: 'electric' | 'gas_propane'
   cone?: string
   program?: string
   program_label?: string
-  firing_type?: string
   loaders?: FiringMember[]
   unloaders?: FiringMember[]
-  operators?: FiringMember[]
   start_datetime: Timestamp
   candle_hrs?: number
   unload_datetime?: Timestamp
@@ -50,7 +49,6 @@ export interface FiringEntry extends FiringDoc {
 
 export interface OpenElectricInput {
   kiln_id: string
-  kiln_type: 'electric'
   cone: string
   program: string
   loaders: FiringMember[]
@@ -118,7 +116,6 @@ export const useFirings = () => {
     const program_label = `${input.cone} ${input.program}`
     const docRef = await addDoc(collection(firestore, 'firings'), {
       kiln_id: input.kiln_id,
-      kiln_type: 'electric',
       cone: input.cone,
       program: input.program,
       program_label,
