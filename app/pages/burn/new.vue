@@ -35,6 +35,7 @@
         <p class="text-sm font-medium text-gray-700">
           Time to quartz inversion <span class="text-gray-400">(optional, minutes)</span>
         </p>
+        <p class="text-xs text-gray-500">Quartz inversion occurs between 1000–1115°F.</p>
         <UInput
           v-model="timeToQiRaw"
           type="number"
