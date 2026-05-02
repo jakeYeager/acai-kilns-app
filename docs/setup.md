@@ -54,18 +54,18 @@ Things only Jake (or a Workspace admin) can do. The code can't progress past cer
 
 Webhooks are deferred-stubbed in the code; Slack-posting functions log payloads until these are set.
 
-- [ ] Create channels (Jake is sole workspace admin per plan):
+- [x] Create channels (Jake is sole workspace admin per plan):
   - `#kiln-reports` (kiln-specific, scheduled report links)
   - `#webapp-alerts` (shared with volunteer logger; messages prefixed `[kilns]`)
-  - `#kiln-tech` (problem reports + future long-open-firing alerts)
-- [ ] Slack app → Incoming Webhooks → enable → create one webhook URL per channel
-- [ ] Set as Cloud Function secrets:
+  - `#kiln-repair` (problem reports + future long-open-firing alerts) *(originally provisioned as `#kiln-tech` and renamed 2026-05-01 before any code referenced it)*
+- [x] Slack app ("Kiln Bot") → Incoming Webhooks → enable → one webhook URL per channel
+- [x] Set as Cloud Function secrets — done 2026-05-01 against dev; all three smoke-tested (HTTP 200, message landed in target channel):
   ```
-  npx firebase-tools functions:secrets:set SLACK_WEBHOOK_KILN_REPORTS --project acai-kilns-dev
-  npx firebase-tools functions:secrets:set SLACK_WEBHOOK_WEBAPP_ALERTS --project acai-kilns-dev
-  npx firebase-tools functions:secrets:set SLACK_WEBHOOK_KILN_TECH    --project acai-kilns-dev
+  firebase functions:secrets:set SLACK_WEBHOOK_KILN_REPORTS  --project acai-kilns-dev
+  firebase functions:secrets:set SLACK_WEBHOOK_WEBAPP_ALERTS --project acai-kilns-dev
+  firebase functions:secrets:set SLACK_WEBHOOK_KILN_REPAIR   --project acai-kilns-dev
   ```
-- [ ] Repeat for `--project acai-kilns-prod` once prod exists
+- [ ] Repeat for `--project acai-kilns-prod` once prod exists. Reusing the same URLs is fine while Jake is the only consumer; split when a kiln tech joins.
 
 **Bus-factor note:** Jake is the only workspace admin. If a webhook is leaked and Jake is unreachable, no rotation can happen until then. Acceptable v1; add a board backup later if it bites.
 
@@ -159,7 +159,7 @@ Initial dev runs under Jake's personal Google account. Once the app has soaked, 
 |---|---|
 | Dev Firebase project | 🟡 Outstanding |
 | Prod Firebase project | 🟡 Outstanding |
-| Slack channels + webhooks | 🟡 Outstanding |
+| Slack channels + webhooks | ✅ Done 2026-05-01 (dev only; prod when project exists) |
 | Turnstile site | 🟡 Outstanding |
 | GitHub secrets | 🟡 Outstanding |
 | Nonprofit credits verification | 🟡 Outstanding |

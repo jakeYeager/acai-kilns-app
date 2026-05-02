@@ -21,7 +21,7 @@ Tracking doc for the kiln logger build. Updated as phases complete.
 
 Goal: `npm run dev` boots a Nuxt 3 SPA against the Firebase emulator suite. Code committed.
 
-- ✅ Decide tracking docs posture (`/docs/*` gitignored — confirmed 2026-04-30)
+- ✅ Decide tracking docs posture (initially `/docs/*` gitignored 2026-04-30; narrowed to `/docs/reference-data/` only on 2026-05-01 — `setup.md` and `implementation-plan.md` now tracked, planning snapshots moved into the ignored reference-data folder)
 - ✅ Write `docs/implementation-plan.md` (this file)
 - ✅ Write `docs/setup.md` (Jake's outbound checklist)
 - ✅ Scaffold Nuxt 3 SPA in `app/` (Nuxt 4 layout, `compatibilityVersion: 4`): `package.json`, `nuxt.config.ts`, `app/app.vue`, `app/layouts/default.vue`, `app/pages/index.vue`, `tsconfig.json`
@@ -162,11 +162,11 @@ Goal: open and close electric firings end-to-end with the right pickers, validat
 
 - ⬜ `ProblemForm` component
 - ⬜ Flow C entry points: inline in Flow B, `/firing/[id]/problem`, out-of-band from home
-- ⬜ Cloud Function `onCreateProblem` — formats the message, posts to `#kiln-tech` webhook (stub if `SLACK_WEBHOOK_KILN_TECH` unset; logs payload to console)
+- ⬜ Cloud Function `onCreateProblem` — formats the message, posts to `#kiln-repair` webhook (stub if `SLACK_WEBHOOK_KILN_REPAIR` unset; logs payload to console)
 - ⬜ `has_problem` flag updated on parent firing
 - ⬜ `/admin/problems` triage view (open / acknowledged / resolved)
 
-**Exit criteria:** filing a problem on a firing flips its badge and (when webhook set) posts to `#kiln-tech`.
+**Exit criteria:** filing a problem on a firing flips its badge and (when webhook set) posts to `#kiln-repair`.
 
 ---
 
@@ -222,9 +222,9 @@ Per plan §11:
 
 ## Cross-cutting reminders
 
-- `/docs/*` is gitignored. This file lives there because it tracks an evolving build, not architecture. Do not commit it; pair it with conversation context.
+- `/docs/reference-data/` is gitignored (bulky source artifacts + planning snapshots that drift). This file and `setup.md` are tracked — they're the living operational docs.
 - Plan §3 `kiln_type` discriminator + `training` map are the only future-proofing that's load-bearing. Don't add more.
 - 24h edit window is **collective** — any authed member, not just creator.
 - Auto-add authed member as first loader/unloader/operator **only if** training flag is true. Resolved 2026-04-30.
-- Stub Slack until webhooks land. Slack-stub functions log payloads to console.
+- Slack webhooks landed for dev (2026-05-01) — `SLACK_WEBHOOK_KILN_REPORTS`, `SLACK_WEBHOOK_WEBAPP_ALERTS`, `SLACK_WEBHOOK_KILN_REPAIR` all set. Cloud Functions in phases 6-7 should still degrade to console.log when a `SLACK_WEBHOOK_*` is unset, so emulator runs and future envs without webhooks don't crash.
 - Tests: Vitest for helpers + `@firebase/rules-unit-testing` for rules. No Playwright in v1.
