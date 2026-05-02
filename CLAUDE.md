@@ -70,7 +70,7 @@ Three private channels (Incoming Webhooks; URLs live in Secret Manager / Functio
 
 - `#kiln-reports` — scheduled report-link posts (when the CSV export Cloud Function finishes).
 - `#webapp-alerts` — health alerts: function errors, scheduled-job failures, Firestore rule denials, deploy notifications. **Shared with the volunteer logger** — messages prefixed `[kilns]` for disambiguation.
-- `#kiln-tech` — Cloud Function on `problems` document create posts a structured message here. Replaces the legacy "post a kiln photo to a generalized channel" workflow.
+- `#kiln-repair` — Cloud Function on `problems` document create posts a structured message here. Replaces the legacy "post a kiln photo to a generalized channel" workflow.
 
 Webhook-only — no full Slack bot in v1. Outbound posts only, no interactive responses.
 
@@ -83,7 +83,7 @@ Webhook-only — no full Slack bot in v1. Outbound posts only, no interactive re
 
 ## Outstanding pre-build tasks (Jake owes these before v1 can ship)
 
-- ✅ Create Slack channels (`#kiln-reports`, `#webapp-alerts`, `#kiln-tech`) and Incoming Webhooks (done 2026-05-01; URLs stored in Firebase Secret Manager as `SLACK_WEBHOOK_KILN_REPORTS`, `SLACK_WEBHOOK_WEBAPP_ALERTS`, `SLACK_WEBHOOK_KILN_TECH`; same URLs reused for prod for now since Jake is the only consumer)
+- ✅ Create Slack channels (`#kiln-reports`, `#webapp-alerts`, `#kiln-repair`) and Incoming Webhooks (done 2026-05-01; URLs stored in Firebase Secret Manager as `SLACK_WEBHOOK_KILN_REPORTS`, `SLACK_WEBHOOK_WEBAPP_ALERTS`, `SLACK_WEBHOOK_KILN_REPAIR`; same URLs reused for prod for now since Jake is the only consumer)
 - 🟡 Verify Google for Nonprofits + Cloud nonprofit credits with the ED / Workspace admin
 - ✅ Contact Kiln Fire re: roadmap (done 2026-04-30)
 
@@ -104,6 +104,6 @@ For UI work: start the dev server and use the feature in a browser. Mobile viewp
 ## People
 
 - **Jake** — primary owner, board member at ACAI, sole Slack workspace admin. Bus-factor risk noted — option to add a board backup later if it becomes operationally painful.
-- **Kiln techs (~2)** — admin-tier; primary audience for `#kiln-tech` posts and `/admin/problems` triage.
+- **Kiln techs (~2)** — admin-tier; primary audience for `#kiln-repair` posts and `/admin/problems` triage.
 - **Board backup (1)** — admin-tier as a bus-factor mitigation.
 - **ED** — *not* in the day-to-day loop for this app. Don't propose ED-coordination tasks.
