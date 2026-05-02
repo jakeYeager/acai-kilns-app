@@ -58,6 +58,19 @@
       </div>
     </section>
 
+    <section v-if="!kilnsLoading && gasPropaneKilns.length">
+      <h2 class="mb-2 text-sm font-medium text-gray-500">Gas / raku kilns</h2>
+      <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <GasKilnCard
+          v-for="kiln in gasPropaneKilns"
+          :key="kiln.id"
+          :kiln="kiln"
+          :last-burn="lastBurnByKiln[kiln.id] || null"
+          :latest-refill="latestRefillByKiln[kiln.id] || null"
+        />
+      </div>
+    </section>
+
     <!-- Sign-in form — only for unauthed visitors -->
     <template v-if="!state.loading && !state.user">
       <section
@@ -131,8 +144,10 @@
 import { sendSignInLinkToEmail } from 'firebase/auth'
 
 const { state, isOnRoster, isOffRoster, isAdmin, signOut } = useCurrentMember()
-const { electricKilns, state: lookupState } = useLookups()
+const { electricKilns, gasPropaneKilns, state: lookupState } = useLookups()
 const { inProgress } = useFirings()
+const { recent: recentBurns } = useBurns()
+const { latestByKiln: latestRefillByKiln } = useRefills()
 const config = useRuntimeConfig()
 
 const projectId = computed(
@@ -145,6 +160,14 @@ const openFiringsByKiln = computed(() => {
   const map: Record<string, (typeof inProgress.value)[number]> = {}
   for (const f of inProgress.value) {
     if (!map[f.kiln_id]) map[f.kiln_id] = f
+  }
+  return map
+})
+
+const lastBurnByKiln = computed(() => {
+  const map: Record<string, (typeof recentBurns.value)[number]> = {}
+  for (const b of recentBurns.value) {
+    if (!map[b.kiln_id]) map[b.kiln_id] = b
   }
   return map
 })
