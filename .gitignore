@@ -35,8 +35,10 @@ emulator-ui/
 !env.example
 service-account*.json
 
-# Tracking docs / reference data — internal only, not committed
-/docs/*
+# Reference data — bulky source artifacts (CSVs, xlsx) and the
+# planning/Q&A snapshots that drove the schema. Tracked-in repo docs
+# (setup.md, implementation-plan.md) live alongside this ignored dir.
+/docs/reference-data/
 
 # OS / editor noise
 .DS_Store
