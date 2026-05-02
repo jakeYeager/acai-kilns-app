@@ -213,6 +213,7 @@ Per plan §11:
 - Long-open firing alert (v1.5; needs real timing data first)
 - Daily/weekly firing summary post (v1.5)
 - Tank refills CSV companion (v1.5)
+- **"Mark QI" button on the running burn stopwatch** (v1.5) — while the stopwatch is running on `/burn/new`, surface a one-tap button that captures the current elapsed minute mark into the `time_to_qi` field without interrupting the timer. Removes the friction of typing while observing the kiln, and locks the data to the actual observation moment instead of a post-hoc estimate. Pairs with the page-stickiness rationale captured in the `project_burn_stopwatch_qi` memory.
 - Stand-alone raku report (future)
 - Tank refill Slack post (if requested)
 - Email-change member-merge admin tool (v2)
