@@ -81,7 +81,12 @@ jobs:
           printf '%s' '${{ secrets.FIREBASE_SERVICE_ACCOUNT_DEV }}' > "$RUNNER_TEMP/sa.json"
           echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/sa.json" >> "$GITHUB_ENV"
       - name: Deploy Firestore rules + indexes
-        run: npx firebase deploy --only firestore --project "$FIREBASE_PROJECT" --non-interactive
+        # --force lets non-interactive mode prune indexes that exist on the
+        # project but aren't in firestore.indexes.json (without it, the CLI
+        # bails with "Pass the --force flag to use this command in
+        # non-interactive mode"). Local file is the source of truth — review
+        # firestore.indexes.json before merging schema changes.
+        run: npx firebase deploy --only firestore --project "$FIREBASE_PROJECT" --non-interactive --force
       - name: Build Cloud Functions (TypeScript)
         run: npm --prefix functions ci --no-audit --no-fund && npm --prefix functions run build
       - name: Deploy Cloud Functions
