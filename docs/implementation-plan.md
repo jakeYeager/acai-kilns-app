@@ -145,16 +145,18 @@ Goal: open and close electric firings end-to-end with the right pickers, validat
 
 ---
 
-## Phase 5 — Raku flow D + tank refill flow E ⬜
+## Phase 5 — Raku flow D + tank refill flow E ✅
 
-- ⬜ `FiringTypePicker`, `OperatorsInput`, `DurationInput`
-- ⬜ `pages/firing/new.vue` branches on kiln type → Flow D for raku
-- ⬜ `pages/refill/new.vue` — Flow E with auto-computed `firings_since_last` + `total_minutes_since_last` (admin override)
-- ⬜ `pages/refill/[id].vue` — detail + admin override
-- ⬜ Cloud Function `recomputeRefillCounters` — on `firings` write/delete, recompute affected refills
-- ⬜ `TankStatusTile` on `/` and `/dashboard`
+- ✅ `FiringTypePicker` + `DurationInput` (operators picker reuses `MemberPicker` with a `role` prop instead of a dedicated component)
+- ✅ Schema split: gas/raku events live in their own `burns` collection (closed-on-create), with `/burn/new` and `/burn/[id]` distinct from electric `firings`. Captures `target_cone` (text — preserves leading zeros) + optional `time_to_qi` minutes. Stopwatch on `/burn/new` is the page-stickiness mechanism for QI capture (see `project_burn_stopwatch_qi` memory).
+- ✅ `pages/refill/new.vue` — Flow E with auto-computed `burns_since_last` + `total_minutes_since_last`
+- ✅ `pages/refill/[id].vue` — detail + admin counter override
+- ⬜ Cloud Function `recomputeRefillCounters` — moved to Phase 7. Counters are computed at write-time client-side; the gap is on-edit/delete of an existing burn within a refill window.
+- 🟡 `TankStatusTile` — `/` shows tank status via `GasKilnCard` (last burn ago, latest refill, $/burn). The `/dashboard` tile lands in Phase 8.
 
-**Exit criteria:** raku firing logged; refill logged; tile shows correct rolling counts.
+**Post-Phase-5 refinements (commit `8d135fa`):** duration as `duration_minutes` integer (replaced `firing_hh_mm` string + `firing_minutes`); `HoursMinutesInput` dual-input with rollover on minutes ≥ 60; brand theme (kiln teal `#649199` as Nuxt UI primary, ghost-link blue, status icons).
+
+**Exit criteria:** raku burn logged; refill logged; gas kiln card shows rolling counts. ✅
 
 ---
 
