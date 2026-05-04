@@ -2,7 +2,7 @@
   <div class="space-y-6">
     <header class="flex items-center justify-between">
       <h1 class="text-2xl font-semibold">Log a burn</h1>
-      <UButton variant="ghost" size="sm" to="/">Cancel</UButton>
+      <UButton variant="ghost" color="blue" size="sm" to="/">Cancel</UButton>
     </header>
 
     <form
@@ -18,7 +18,7 @@
       <MemberPicker v-model="operators" role="operator" label="Operators" />
 
       <DurationInput
-        v-model="firingHhMm"
+        v-model="durationMinutes"
         @update:started-at="onStopwatchStartedAt"
       />
 
@@ -80,7 +80,7 @@ const kilnId = ref<string | null>(kilnFromQuery)
 const firingTypeId = ref<string | null>(null)
 const targetCone = ref('')
 const operators = ref<FiringMember[]>([])
-const firingHhMm = ref('')
+const durationMinutes = ref<number | null>(null)
 const stopwatchStartedAt = ref<Date | null>(null)
 const manualStartDateTime = ref<Date | null>(null)
 const timeToQiRaw = ref('')
@@ -97,8 +97,9 @@ watchEffect(() => {
   operators.value = [{ member_id: me.id, display_name: me.display_name }]
 })
 
-const hhMmPattern = /^\d{1,3}:\d{1,2}(?::\d{1,2})?$/
-const firingHhMmValid = computed(() => hhMmPattern.test(firingHhMm.value.trim()))
+const durationValid = computed(() =>
+  durationMinutes.value != null && durationMinutes.value > 0
+)
 
 const canSubmit = computed(() => {
   return Boolean(
@@ -106,7 +107,7 @@ const canSubmit = computed(() => {
       firingTypeId.value &&
       targetCone.value.trim() &&
       operators.value.length &&
-      firingHhMmValid.value &&
+      durationValid.value &&
       (stopwatchStartedAt.value || manualStartDateTime.value) &&
       isOnRoster.value &&
       !submitting.value
@@ -150,7 +151,7 @@ async function onSubmit() {
       target_cone: targetCone.value,
       operators: operators.value,
       start_datetime: start,
-      firing_hh_mm: firingHhMm.value,
+      duration_minutes: durationMinutes.value!,
       ...(time_to_qi != null && !Number.isNaN(time_to_qi) ? { time_to_qi } : {}),
       ...(notes.value ? { notes: notes.value } : {}),
     })

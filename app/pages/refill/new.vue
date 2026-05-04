@@ -2,7 +2,7 @@
   <div class="space-y-6">
     <header class="flex items-center justify-between">
       <h1 class="text-2xl font-semibold">Log tank refill</h1>
-      <UButton variant="ghost" size="sm" to="/">Cancel</UButton>
+      <UButton variant="ghost" color="blue" size="sm" to="/">Cancel</UButton>
     </header>
 
     <form

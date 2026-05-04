@@ -2,7 +2,7 @@
   <div class="space-y-6">
     <header class="flex items-center justify-between">
       <h1 class="text-2xl font-semibold">Refill detail</h1>
-      <UButton variant="ghost" size="sm" to="/">Home</UButton>
+      <UButton variant="ghost" color="blue" size="sm" to="/">Home</UButton>
     </header>
 
     <div v-if="loading" class="rounded-lg border border-gray-200 bg-white p-4 text-sm text-gray-500">

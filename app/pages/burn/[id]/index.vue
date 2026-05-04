@@ -2,7 +2,7 @@
   <div class="space-y-6">
     <header class="flex items-center justify-between">
       <h1 class="text-2xl font-semibold">Burn detail</h1>
-      <UButton variant="ghost" size="sm" to="/">Home</UButton>
+      <UButton variant="ghost" color="blue" size="sm" to="/">Home</UButton>
     </header>
 
     <div v-if="loading" class="rounded-lg border border-gray-200 bg-white p-4 text-sm text-gray-500">
@@ -20,7 +20,7 @@
             <span class="text-2xl font-semibold">{{ burn.kiln_id }}</span>
             <span class="ml-2 text-base text-gray-600">{{ burn.firing_type }}</span>
           </div>
-          <span class="rounded-full bg-orange-100 px-3 py-1 text-xs font-medium text-orange-800">
+          <span class="rounded-full bg-primary-100 px-3 py-1 text-xs font-medium text-primary-800">
             cone {{ burn.target_cone }}
           </span>
         </div>
@@ -39,7 +39,7 @@
           </div>
           <div>
             <dt class="text-xs font-medium text-gray-500">Duration</dt>
-            <dd class="text-sm">{{ burn.firing_hh_mm }}</dd>
+            <dd class="text-sm">{{ formatMinutes(burn.duration_minutes) }}</dd>
           </div>
           <div v-if="burn.time_to_qi != null">
             <dt class="text-xs font-medium text-gray-500">Time to QI</dt>

@@ -17,6 +17,10 @@ export default defineNuxtConfig({
     '@vite-pwa/nuxt',
   ],
 
+  ui: {
+    safelistColors: ['kiln', 'emerald', 'blue', 'purple'],
+  },
+
   runtimeConfig: {
     turnstile: {
       secretKey: '',

@@ -241,8 +241,7 @@ describe('burns — create', () => {
         created_by: 'm1',
         created_at: Timestamp.now(),
         start_datetime: Timestamp.now(),
-        firing_hh_mm: '0:42',
-        firing_minutes: 42,
+        duration_minutes: 42,
       })
     )
   })

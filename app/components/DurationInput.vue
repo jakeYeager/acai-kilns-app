@@ -1,15 +1,12 @@
 <template>
   <div>
-    <p class="text-sm font-medium text-gray-700">Duration <span class="text-gray-400">(HH:MM)</span></p>
+    <p class="text-sm font-medium text-gray-700">Duration</p>
 
     <!-- Idle: manual entry + start-stopwatch CTA -->
     <div v-if="!running && !frozenStartedAt" class="mt-1 space-y-2">
-      <UInput
+      <HoursMinutesInput
         :model-value="modelValue"
-        placeholder="e.g. 0:42"
-        inputmode="numeric"
-        size="lg"
-        @update:model-value="onManualEntry(String($event))"
+        @update:model-value="onManualEntry"
       />
       <UButton
         type="button"
@@ -23,19 +20,19 @@
     <!-- Running: live elapsed + Stop CTA -->
     <div
       v-else-if="running"
-      class="mt-2 rounded-lg border-2 border-orange-300 bg-orange-50 p-4 space-y-2"
+      class="mt-2 rounded-lg border-2 border-emerald-300 bg-emerald-50 p-4 space-y-2"
     >
-      <p class="text-center font-mono text-4xl font-bold text-orange-900 tabular-nums">
+      <p class="text-center font-mono text-4xl font-bold text-emerald-900 tabular-nums">
         {{ liveDisplay }}
       </p>
-      <p class="text-center text-xs text-orange-700">
+      <p class="text-center text-xs text-emerald-700">
         Started at {{ startedAtClock }} — survives screen lock and refresh.
       </p>
       <UButton
         type="button"
         block
         size="lg"
-        color="orange"
+        color="emerald"
         icon="i-heroicons-stop"
         @click="stop"
       >Stop</UButton>
@@ -43,7 +40,7 @@
 
     <!-- Frozen: stopwatch finished, value populated -->
     <div v-else class="mt-2 rounded-lg border border-gray-200 bg-gray-50 p-3 space-y-1">
-      <p class="text-2xl font-mono font-semibold tabular-nums">{{ modelValue || '—' }}</p>
+      <p class="text-2xl font-mono font-semibold tabular-nums">{{ formatMinutes(modelValue) || '—' }}</p>
       <p class="text-xs text-gray-600">Recorded from stopwatch — started {{ startedAtClock }}.</p>
       <UButton
         type="button"
@@ -58,9 +55,9 @@
 <script setup lang="ts">
 const STORAGE_KEY = 'kilns:burn-stopwatch'
 
-const props = defineProps<{ modelValue: string }>()
+const props = defineProps<{ modelValue: number | null }>()
 const emit = defineEmits<{
-  'update:modelValue': [value: string]
+  'update:modelValue': [value: number | null]
   'update:startedAt': [value: Date | null]
 }>()
 
@@ -112,12 +109,10 @@ function stop() {
   running.value = false
   if (interval) { clearInterval(interval); interval = null }
   window.localStorage.removeItem(STORAGE_KEY)
-  // Round to nearest minute for HH:MM. Operators won't care about seconds
-  // and the kiln-display history was always minute-resolution.
+  // Round to nearest minute. Operators won't care about seconds and the
+  // kiln-display history was always minute-resolution.
   const minutes = Math.round((Date.now() - startedAt.value.getTime()) / 60_000)
-  const h = Math.floor(minutes / 60)
-  const m = minutes % 60
-  emit('update:modelValue', `${h}:${String(m).padStart(2, '0')}`)
+  emit('update:modelValue', minutes)
   frozenStartedAt.value = startedAt.value
   // startedAt remains emitted so parent can lock start_datetime to the
   // moment Start was tapped.
@@ -129,11 +124,11 @@ function reset() {
   running.value = false
   if (interval) { clearInterval(interval); interval = null }
   window.localStorage.removeItem(STORAGE_KEY)
-  emit('update:modelValue', '')
+  emit('update:modelValue', null)
   emit('update:startedAt', null)
 }
 
-function onManualEntry(value: string) {
+function onManualEntry(value: number | null) {
   emit('update:modelValue', value)
   // Manual entry — clear any lingering stopwatch context so the parent
   // falls back to its own start_datetime picker.

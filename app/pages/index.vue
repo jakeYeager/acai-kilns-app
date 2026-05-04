@@ -8,10 +8,10 @@
         </h1>
         <p class="mt-1 text-sm text-gray-600">
           Signed in as <code class="text-xs">{{ state.user?.email }}</code>
-          <span v-if="isAdmin" class="ml-2 rounded bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-700">admin</span>
+          <span v-if="isAdmin" class="ml-2 rounded bg-primary-100 px-2 py-0.5 text-xs font-medium text-primary-700">admin</span>
         </p>
       </div>
-      <UButton size="sm" variant="ghost" @click="onSignOut">Sign out</UButton>
+      <UButton size="sm" variant="ghost" color="blue" @click="onSignOut">Sign out</UButton>
     </section>
 
     <!-- Off-roster banner (authed but no member doc) -->
@@ -82,7 +82,7 @@
           We sent a sign-in link to <code class="text-xs">{{ submittedEmail }}</code>.
           Open it on this device to complete sign-in.
         </p>
-        <UButton class="mt-3" size="sm" variant="ghost" @click="resetForm">
+        <UButton class="mt-3" size="sm" variant="ghost" color="blue" @click="resetForm">
           Use a different email
         </UButton>
       </section>

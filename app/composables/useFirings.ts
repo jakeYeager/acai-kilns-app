@@ -31,8 +31,7 @@ export interface FiringDoc {
   candle_hrs?: number
   unload_datetime?: Timestamp
   unload_temp?: number
-  firing_hh_mm?: string
-  firing_minutes?: number
+  duration_minutes?: number
   notes?: string
   status: 'open' | 'closed'
   has_problem: boolean
@@ -61,15 +60,8 @@ export interface CloseElectricInput {
   unloaders: FiringMember[]
   unload_datetime: Date
   unload_temp?: number
-  firing_hh_mm: string  // Required: from the kiln controller display, not page-derived.
+  duration_minutes: number  // Required: from the kiln controller display, not page-derived.
   notes?: string
-}
-
-function parseHhMmToMinutes(hhmm: string): number {
-  // Accept "H:MM", "HH:MM", or "HH:MM:SS" — historical CSV mixes the two.
-  const m = hhmm.trim().match(/^(\d{1,3}):(\d{1,2})(?::\d{1,2})?$/)
-  if (!m) throw new Error(`Invalid HH:MM format: "${hhmm}"`)
-  return parseInt(m[1]!, 10) * 60 + parseInt(m[2]!, 10)
 }
 
 export const useFirings = () => {
@@ -143,18 +135,15 @@ export const useFirings = () => {
     const existing = snap.data() as FiringDoc
     if (existing.status !== 'open') throw new Error('firing is not open')
 
-    // firing_minutes is derived from the user-entered HH:MM (kiln controller
-    // reading), not from the wall-clock delta between start_datetime and
-    // unload_datetime. The wall-clock approach over-counted candle time and
-    // didn't match what the controller showed.
-    const firing_minutes = parseHhMmToMinutes(input.firing_hh_mm)
-
+    // duration_minutes is the user-entered controller reading, not the
+    // wall-clock delta between start_datetime and unload_datetime. The
+    // wall-clock approach over-counted candle time and didn't match what
+    // the controller showed.
     await updateDoc(ref, {
       unloaders: input.unloaders,
       unload_datetime: Timestamp.fromDate(input.unload_datetime),
       ...(input.unload_temp != null ? { unload_temp: input.unload_temp } : {}),
-      firing_hh_mm: input.firing_hh_mm.trim(),
-      firing_minutes,
+      duration_minutes: input.duration_minutes,
       ...(input.notes ? { notes: input.notes } : {}),
       status: 'closed',
       updated_at: serverTimestamp(),
@@ -183,6 +172,5 @@ export const useFirings = () => {
     closeElectricFiring,
     getFiring,
     watchFiring,
-    parseHhMmToMinutes,
   }
 }

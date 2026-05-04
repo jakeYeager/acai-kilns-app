@@ -2,10 +2,12 @@
   <article class="rounded-lg border bg-white p-4 transition" :class="borderClass">
     <header class="flex items-baseline justify-between gap-2">
       <h3 class="text-lg font-semibold">{{ kiln.display_name }}</h3>
-      <span
-        class="rounded-full px-2 py-0.5 text-xs font-medium"
-        :class="badgeClass"
-      >{{ statusLabel }}</span>
+      <UIcon
+        name="i-heroicons-bolt-solid"
+        :class="isFiring ? 'text-orange-500' : 'text-gray-400'"
+        :aria-label="statusLabel"
+        class="h-6 w-6"
+      />
     </header>
 
     <div v-if="firing" class="mt-2 space-y-1 text-sm text-gray-700">
@@ -31,24 +33,29 @@
       <UButton
         v-if="canStart"
         size="sm"
+        icon="i-heroicons-play"
         :to="`/firing/new?kiln=${kiln.id}`"
       >Start firing</UButton>
       <UButton
         v-if="canClose"
         size="sm"
-        color="orange"
+        color="purple"
+        variant="outline"
+        icon="i-heroicons-stop"
         :to="`/firing/${firing!.id}/close`"
       >Close firing</UButton>
       <UButton
         v-if="canReport"
         size="sm"
         variant="outline"
+        icon="i-heroicons-bell-alert"
         :to="`/problem/new?kiln=${kiln.id}&type=error_code`"
       >Report error code</UButton>
       <UButton
         v-if="canReport"
         size="sm"
         variant="outline"
+        icon="i-heroicons-bell-alert"
         :to="`/problem/new?kiln=${kiln.id}&type=general`"
       >Report problem</UButton>
     </div>
@@ -66,11 +73,8 @@ const { state, isOnRoster } = useCurrentMember()
 
 const isFiring = computed(() => Boolean(props.firing))
 const statusLabel = computed(() => (isFiring.value ? 'Firing' : 'Idle'))
-const badgeClass = computed(() =>
-  isFiring.value ? 'bg-orange-100 text-orange-800' : 'bg-gray-100 text-gray-700'
-)
 const borderClass = computed(() =>
-  isFiring.value ? 'border-orange-200' : 'border-gray-200'
+  isFiring.value ? 'border-emerald-500' : 'border-gray-200'
 )
 
 const isLoader = computed(

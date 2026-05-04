@@ -1,10 +1,7 @@
 <template>
   <article class="rounded-lg border border-gray-200 bg-white p-4 transition">
-    <header class="flex items-baseline justify-between gap-2">
+    <header>
       <h3 class="text-lg font-semibold">{{ kiln.display_name }}</h3>
-      <span class="rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-800">
-        Gas / Raku
-      </span>
     </header>
 
     <div class="mt-2 space-y-1 text-sm text-gray-700">
@@ -32,18 +29,21 @@
       <UButton
         v-if="canLogBurn"
         size="sm"
+        icon="i-heroicons-pencil-square"
         :to="`/burn/new?kiln=${kiln.id}`"
       >Log a burn</UButton>
       <UButton
         v-if="canLogRefill"
         size="sm"
         variant="outline"
+        icon="i-heroicons-pencil-square"
         :to="`/refill/new?kiln=${kiln.id}`"
       >Log refill</UButton>
       <UButton
         v-if="canReport"
         size="sm"
         variant="outline"
+        icon="i-heroicons-bell-alert"
         :to="`/problem/new?kiln=${kiln.id}&type=general`"
       >Report problem</UButton>
     </div>

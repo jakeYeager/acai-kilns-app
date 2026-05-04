@@ -23,8 +23,7 @@ export interface BurnDoc {
   target_cone: string
   operators: FiringMember[]
   start_datetime: Timestamp
-  firing_hh_mm: string
-  firing_minutes: number
+  duration_minutes: number
   time_to_qi?: number
   notes?: string
   has_problem: boolean
@@ -46,15 +45,9 @@ export interface NewBurnInput {
   target_cone: string
   operators: FiringMember[]
   start_datetime: Date
-  firing_hh_mm: string
+  duration_minutes: number
   time_to_qi?: number
   notes?: string
-}
-
-function parseHhMmToMinutes(hhmm: string): number {
-  const m = hhmm.trim().match(/^(\d{1,3}):(\d{1,2})(?::\d{1,2})?$/)
-  if (!m) throw new Error(`Invalid HH:MM format: "${hhmm}"`)
-  return parseInt(m[1]!, 10) * 60 + parseInt(m[2]!, 10)
 }
 
 export const useBurns = () => {
@@ -99,15 +92,13 @@ export const useBurns = () => {
   async function logBurn(input: NewBurnInput): Promise<string> {
     const { firestore } = useFirebase()
     const uid = requireUid()
-    const firing_minutes = parseHhMmToMinutes(input.firing_hh_mm)
     const docRef = await addDoc(collection(firestore, 'burns'), {
       kiln_id: input.kiln_id,
       firing_type: input.firing_type_label,
       target_cone: input.target_cone.trim(),
       operators: input.operators,
       start_datetime: Timestamp.fromDate(input.start_datetime),
-      firing_hh_mm: input.firing_hh_mm.trim(),
-      firing_minutes,
+      duration_minutes: input.duration_minutes,
       ...(input.time_to_qi != null ? { time_to_qi: input.time_to_qi } : {}),
       ...(input.notes ? { notes: input.notes } : {}),
       has_problem: false,
@@ -139,6 +130,5 @@ export const useBurns = () => {
     logBurn,
     getBurn,
     watchBurn,
-    parseHhMmToMinutes,
   }
 }

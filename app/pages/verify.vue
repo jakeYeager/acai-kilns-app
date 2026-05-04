@@ -28,7 +28,7 @@
     >
       <p class="font-medium">Sign-in failed.</p>
       <p class="mt-1">{{ errorMessage }}</p>
-      <UButton class="mt-3" size="sm" variant="ghost" @click="goHome">
+      <UButton class="mt-3" size="sm" variant="ghost" color="blue" @click="goHome">
         Back to home
       </UButton>
     </div>

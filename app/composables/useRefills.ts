@@ -109,7 +109,7 @@ export const useRefills = () => {
     for (const d of burnsSnap.docs) {
       const b = d.data() as {
         start_datetime: Timestamp
-        firing_minutes?: number
+        duration_minutes?: number
         deleted_at?: Timestamp
       }
       if (b.deleted_at) continue
@@ -117,7 +117,7 @@ export const useRefills = () => {
       if (prior && t <= prior) continue
       if (t > refilledAt) continue
       count++
-      totalMinutes += b.firing_minutes ?? 0
+      totalMinutes += b.duration_minutes ?? 0
     }
     return { burns_since_last: count, total_minutes_since_last: totalMinutes }
   }

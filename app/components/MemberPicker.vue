@@ -7,12 +7,12 @@
       <span
         v-for="m in modelValue"
         :key="m.member_id"
-        class="inline-flex items-center gap-1 rounded-full bg-orange-100 px-3 py-1 text-sm text-orange-900"
+        class="inline-flex items-center gap-1 rounded-full bg-primary-100 px-3 py-1 text-sm text-primary-900"
       >
         {{ m.display_name }}
         <button
           type="button"
-          class="text-orange-600 hover:text-orange-900"
+          class="text-primary-600 hover:text-primary-900"
           aria-label="remove"
           @click="remove(m.member_id)"
         >

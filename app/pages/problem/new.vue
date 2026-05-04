@@ -2,12 +2,12 @@
   <div class="space-y-6">
     <header class="flex items-center justify-between">
       <h1 class="text-2xl font-semibold">{{ pageTitle }}</h1>
-      <UButton variant="ghost" size="sm" to="/">Cancel</UButton>
+      <UButton variant="ghost" color="blue" size="sm" to="/">Cancel</UButton>
     </header>
 
     <div v-if="!kiln" class="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">
       Unknown kiln <code>{{ kilnId }}</code>.
-      <UButton class="ml-2" size="sm" variant="ghost" to="/">Back home</UButton>
+      <UButton class="ml-2" size="sm" variant="ghost" color="blue" to="/">Back home</UButton>
     </div>
 
     <form

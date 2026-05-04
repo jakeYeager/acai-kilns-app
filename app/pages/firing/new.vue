@@ -2,7 +2,7 @@
   <div class="space-y-6">
     <header class="flex items-center justify-between">
       <h1 class="text-2xl font-semibold">Start a firing</h1>
-      <UButton variant="ghost" size="sm" to="/">Cancel</UButton>
+      <UButton variant="ghost" color="blue" size="sm" to="/">Cancel</UButton>
     </header>
 
     <form class="space-y-6 rounded-lg border border-gray-200 bg-white p-4" @submit.prevent="onSubmit">

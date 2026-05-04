@@ -2,7 +2,7 @@
   <div class="space-y-6">
     <header class="flex items-center justify-between">
       <h1 class="text-2xl font-semibold">Firing detail</h1>
-      <UButton variant="ghost" size="sm" to="/">Home</UButton>
+      <UButton variant="ghost" color="blue" size="sm" to="/">Home</UButton>
     </header>
 
     <div v-if="loading" class="rounded-lg border border-gray-200 bg-white p-4 text-sm text-gray-500">
@@ -53,9 +53,9 @@
               </div>
             </dd>
           </div>
-          <div v-if="firing.firing_hh_mm">
+          <div v-if="firing.duration_minutes != null">
             <dt class="text-xs font-medium text-gray-500">Duration</dt>
-            <dd class="text-sm">{{ firing.firing_hh_mm }}</dd>
+            <dd class="text-sm">{{ formatMinutes(firing.duration_minutes) }}</dd>
           </div>
           <div v-if="firing.unload_temp != null">
             <dt class="text-xs font-medium text-gray-500">Unload temp</dt>
