@@ -80,6 +80,10 @@ jobs:
         run: |
           printf '%s' '${{ secrets.FIREBASE_SERVICE_ACCOUNT_DEV }}' > "$RUNNER_TEMP/sa.json"
           echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/sa.json" >> "$GITHUB_ENV"
+      - name: DEBUG — confirm SA loaded
+        run: node -e "const d=require(process.env.GOOGLE_APPLICATION_CREDENTIALS);console.log('SA email:',d.client_email,'project:',d.project_id);"
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/sa.json
       - name: Deploy Firestore rules + indexes
         # --force lets non-interactive mode prune indexes that exist on the
         # project but aren't in firestore.indexes.json (without it, the CLI
