@@ -165,7 +165,7 @@ Goal: open and close electric firings end-to-end with the right pickers, validat
 - ✅ Schema reconciled to plan §3: `severity` (`blocking` | `non_blocking`), `description`, optional `firing_id` + `program_label` denorms, optional `slack_posted_at`. Replaces the old `type` (`error_code` | `general`) + `body` shape. (No data migration needed — dev was wiped after Phase 5.)
 - ⬜ Stand-alone `ProblemForm` component **deferred**. The two entry-point pages (`/problem/new`, `/firing/[id]/problem`) share the severity/error-code/description block but diverge on context (kiln-only vs firing-scoped). Extraction would still need conditional logic and gates nothing — left in place pending a third call site.
 - ✅ Flow C entry points: inline-in-Flow-B (checkbox on close form → routes to problem page after close), `/firing/[id]/problem` (auto-fills firing_id + program_label), out-of-band via `/problem/new?kiln=…&severity=…` from KilnCard / GasKilnCard
-- ✅ Cloud Function `onCreateProblem` — formats markdown, posts to `#kiln-repair` (Slack `defineSecret('SLACK_WEBHOOK_KILN_REPAIR')`; degrades to `logger.info` payload when unset). Stamps `slack_posted_at` only on successful POST.
+- 🟡 Cloud Function `onCreateProblem` — formats markdown, posts to `#kiln-repair` when `SLACK_WEBHOOK_KILN_REPAIR` env var is set; otherwise `logger.info` the payload. Stamps `slack_posted_at` only on successful POST. **`defineSecret` removed 2026-05-04** because the deploy SA's `secretmanager.secrets.get` 403'd despite a project-level `Secret Manager Secret Accessor` grant — see `setup.md` §2 for diagnostic state. Phase 7 picks up the secret binding once resolved; until then deployed envs go without live Slack and the function is verified via console logs only.
 - ✅ `has_problem: true` flipped on parent firing when `firing_id` present
 - ✅ `/admin/problems` triage view: status filter pills (open / acknowledged / resolved / all) with counts, severity-tinted cards, acknowledge / resolve / reopen actions, optional resolution notes via modal. Admin-only via new `app/middleware/admin.ts`.
 - ✅ Firing detail (`/firing/[id]`) shows a "Problem reported" badge when `has_problem=true`, lists problems via `watchProblemsForFiring`, and exposes a "Report a problem" button on closed firings
@@ -178,10 +178,12 @@ Goal: open and close electric firings end-to-end with the right pickers, validat
 
 ## Phase 7 — Cloud Functions hardening ⬜
 
-- ⬜ Replace Slack stubs with real webhook calls (gated on `SLACK_WEBHOOK_*` secrets)
+- ⬜ **Resolve Secret Manager binding for the deploy SA** so `defineSecret` can come back into `onCreateProblem` and the function can post to `#kiln-repair` for real. Granted project-level `Secret Manager Secret Accessor` 2026-05-04 but the deploy still 403'd on `secrets.get` and reproduces locally with the same SA — see `setup.md` §2 for the diagnostic record. First angle to try: enable Data Access audit logs for Secret Manager and re-deploy to see whether the SA is even reaching the API.
+- ⬜ Replace Slack stubs with real webhook calls (gated on `SLACK_WEBHOOK_*` secrets, once the binding is resolved)
 - ⬜ Health alert emitter (`#webapp-alerts` with `[kilns]` prefix) on uncaught function errors
 - ⬜ Scheduled CSV export: `firings_YYYY-MM-DD.csv` matching existing column shape; posts link to `#kiln-reports`
 - ⬜ Soft-delete cleanup helper (admin-only callable)
+- ⬜ `recomputeRefillCounters` (deferred from Phase 5) — recompute `firings_since_last` + `total_minutes_since_last` when a burn within a refill window is edited or soft-deleted
 
 ---
 

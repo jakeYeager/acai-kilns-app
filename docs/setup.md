@@ -65,7 +65,16 @@ Webhooks are deferred-stubbed in the code; Slack-posting functions log payloads 
   firebase functions:secrets:set SLACK_WEBHOOK_WEBAPP_ALERTS --project acai-kilns-dev
   firebase functions:secrets:set SLACK_WEBHOOK_KILN_REPAIR   --project acai-kilns-dev
   ```
-- [ ] Repeat for `--project acai-kilns-prod` once prod exists. Reusing the same URLs is fine while Jake is the only consumer; split when a kiln tech joins.
+- [ ] **Grant Secret Manager access to the deploy SA + the runtime SA.** *(Deferred to Phase 7 — see `docs/implementation-plan.md`. Granted Project-level `Secret Manager Secret Accessor` to the deploy SA `firebase-adminsdk-fbsvc@acai-kilns-dev.iam.gserviceaccount.com` 2026-05-04, but `firebase deploy --only functions` still 403'd on `secretmanager.secrets.get` and reproduces locally with the same SA. Audit logs returned 0 rows for the SA principal — Data Access logs aren't enabled by default for Secret Manager so this is consistent with either "SA isn't actually making the call" or "calls aren't logged." Phase 6 ships without `defineSecret` to unblock; Phase 7 picks up the puzzle and wires the real Slack post once resolved.)*
+
+  When picked up:
+  - **Deploy SA** (`firebase-adminsdk-fbsvc@acai-kilns-dev.iam.gserviceaccount.com`) — needs `Secret Manager Secret Accessor`. Without it, `firebase deploy --only functions` returns `403 Permission 'secretmanager.secrets.get' denied`.
+  - **Runtime SA** (`[PROJECT_NUMBER]-compute@developer.gserviceaccount.com`) — needs the same role on the secret. Without it, the function deploys cleanly but reads the secret value as undefined at runtime.
+
+  Look up the project number on https://console.cloud.google.com/iam-admin/iam?project=acai-kilns-dev (Project info card). Then on each secret at https://console.cloud.google.com/security/secret-manager?project=acai-kilns-dev → click name → **Permissions** → **+ Grant Access** → paste both SA emails → role "Secret Manager Secret Accessor" → Save.
+
+  Diagnostic angles to try next time: enable Data Access logs for Secret Manager (`Project IAM` → `Audit logs` → `Secret Manager API` → check Data Read), then retry the deploy; the audit log should now show whether the SA is hitting the API at all. If it shows successful reads but firebase-tools still fails, the bug is in the CLI's auth flow. If it shows denied reads, the IAM binding isn't actually applied — re-grant via gcloud (install via Homebrew or the standalone installer) for an unambiguous binding.
+- [ ] Repeat the secret set + IAM dance for `--project acai-kilns-prod` once prod exists. Reusing the same URLs is fine while Jake is the only consumer; split when a kiln tech joins.
 
 **Bus-factor note:** Jake is the only workspace admin. If a webhook is leaked and Jake is unreachable, no rotation can happen until then. Acceptable v1; add a board backup later if it bites.
 

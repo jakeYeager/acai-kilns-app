@@ -2,14 +2,17 @@ import { initializeApp } from 'firebase-admin/app'
 import { getAuth } from 'firebase-admin/auth'
 import { getFirestore, FieldValue } from 'firebase-admin/firestore'
 import { logger } from 'firebase-functions'
-import { defineSecret, defineString } from 'firebase-functions/params'
 import { auth as authV1 } from 'firebase-functions/v1'
 import { onDocumentCreated, onDocumentWritten } from 'firebase-functions/v2/firestore'
 
 initializeApp()
 
-const SLACK_WEBHOOK_KILN_REPAIR = defineSecret('SLACK_WEBHOOK_KILN_REPAIR')
-const APP_URL = defineString('APP_URL', { default: '' })
+// Slack webhook + app URL come from process.env at runtime. Phase 7 will
+// wire SLACK_WEBHOOK_KILN_REPAIR back through Secret Manager once the
+// deploy SA's secrets.get IAM binding is sorted (granted but still 403'd
+// against acai-kilns-dev on 2026-05-04 — see setup.md §2). For now the
+// webhook is unset in deployed envs; the function falls through to
+// logger.info, which is acceptable for Phase 6 smoke testing.
 
 interface MemberDoc {
   email?: string
@@ -182,15 +185,15 @@ function buildSlackPayload(p: ProblemPayload, problemId: string, appUrl: string)
 }
 
 export const onCreateProblem = onDocumentCreated(
-  { document: 'problems/{problemId}', secrets: [SLACK_WEBHOOK_KILN_REPAIR] },
+  'problems/{problemId}',
   async (event) => {
     const snap = event.data
     if (!snap) return
     const problem = snap.data() as ProblemPayload
     const problemId = event.params.problemId
 
-    const webhook = SLACK_WEBHOOK_KILN_REPAIR.value()
-    const appUrl = APP_URL.value()
+    const webhook = process.env.SLACK_WEBHOOK_KILN_REPAIR || ''
+    const appUrl = process.env.APP_URL || ''
     const payload = buildSlackPayload(problem, problemId, appUrl)
 
     let slackPostedAt: FirebaseFirestore.FieldValue | null = null
