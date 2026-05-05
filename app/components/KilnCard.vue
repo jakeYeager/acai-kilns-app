@@ -49,14 +49,14 @@
         size="sm"
         variant="outline"
         icon="i-heroicons-bell-alert"
-        :to="`/problem/new?kiln=${kiln.id}&type=error_code`"
+        :to="`/problem/new?kiln=${kiln.id}&severity=blocking`"
       >Report error code</UButton>
       <UButton
         v-if="canReport"
         size="sm"
         variant="outline"
         icon="i-heroicons-bell-alert"
-        :to="`/problem/new?kiln=${kiln.id}&type=general`"
+        :to="`/problem/new?kiln=${kiln.id}&severity=non_blocking`"
       >Report problem</UButton>
     </div>
   </article>

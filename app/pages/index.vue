@@ -1,22 +1,8 @@
 <template>
   <div class="space-y-6">
-    <!-- Authed header (welcome + sign out) -->
-    <section v-if="isOnRoster" class="flex items-center justify-between">
-      <div>
-        <h1 class="text-2xl font-semibold">
-          Welcome, {{ state.member?.display_name }}
-        </h1>
-        <p class="mt-1 text-sm text-gray-600">
-          Signed in as <code class="text-xs">{{ state.user?.email }}</code>
-          <span v-if="isAdmin" class="ml-2 rounded bg-primary-100 px-2 py-0.5 text-xs font-medium text-primary-700">admin</span>
-        </p>
-      </div>
-      <UButton size="sm" variant="ghost" color="blue" @click="onSignOut">Sign out</UButton>
-    </section>
-
     <!-- Off-roster banner (authed but no member doc) -->
     <section
-      v-else-if="isOffRoster"
+      v-if="isOffRoster"
       class="rounded-lg border border-amber-200 bg-amber-50 p-4"
     >
       <h1 class="text-lg font-semibold text-amber-900">You're not on the roster</h1>
@@ -32,9 +18,8 @@
     </section>
 
     <!-- Public landing header for unauthed visitors -->
-    <section v-else>
-      <h1 class="text-2xl font-semibold">ACAI Kilns</h1>
-      <p class="mt-1 text-sm text-gray-600">
+    <section v-else-if="!state.user && !state.loading">
+      <p class="text-sm text-gray-600">
         Live kiln status. Sign in below to start firings or report problems.
       </p>
     </section>
@@ -143,7 +128,7 @@
 <script setup lang="ts">
 import { sendSignInLinkToEmail } from 'firebase/auth'
 
-const { state, isOnRoster, isOffRoster, isAdmin, signOut } = useCurrentMember()
+const { state, isOnRoster, isOffRoster, signOut } = useCurrentMember()
 const { electricKilns, gasPropaneKilns, state: lookupState } = useLookups()
 const { inProgress } = useFirings()
 const { recent: recentBurns } = useBurns()

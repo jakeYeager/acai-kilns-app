@@ -44,7 +44,7 @@
         size="sm"
         variant="outline"
         icon="i-heroicons-bell-alert"
-        :to="`/problem/new?kiln=${kiln.id}&type=general`"
+        :to="`/problem/new?kiln=${kiln.id}&severity=non_blocking`"
       >Report problem</UButton>
     </div>
   </article>

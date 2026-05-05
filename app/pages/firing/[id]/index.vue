@@ -15,18 +15,46 @@
 
     <template v-else>
       <section class="rounded-lg border border-gray-200 bg-white p-4 space-y-2">
-        <div class="flex items-baseline justify-between">
+        <div class="flex flex-wrap items-baseline justify-between gap-2">
           <div>
             <span class="text-2xl font-semibold">{{ firing.kiln_id }}</span>
             <span v-if="firing.program_label" class="ml-2 text-base text-gray-600">{{ firing.program_label }}</span>
           </div>
-          <span
-            class="rounded-full px-3 py-1 text-xs font-medium"
-            :class="firing.status === 'open' ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-600'"
-          >
-            {{ firing.status }}
-          </span>
+          <div class="flex items-center gap-2">
+            <span
+              v-if="firing.has_problem"
+              class="inline-flex items-center gap-1 rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-800"
+            >
+              <UIcon name="i-heroicons-bell-alert" class="h-3.5 w-3.5" />
+              Problem reported
+            </span>
+            <span
+              class="rounded-full px-3 py-1 text-xs font-medium"
+              :class="firing.status === 'open' ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-600'"
+            >
+              {{ firing.status }}
+            </span>
+          </div>
         </div>
+      </section>
+
+      <section v-if="problems.length" class="rounded-lg border border-red-200 bg-red-50 p-4 space-y-3">
+        <h2 class="text-sm font-semibold text-red-900">Problems on this firing</h2>
+        <ul class="space-y-2 text-sm">
+          <li v-for="p in problems" :key="p.id" class="rounded-md bg-white/80 p-3">
+            <div class="flex flex-wrap items-baseline justify-between gap-2">
+              <span class="font-medium">
+                {{ p.severity === 'blocking' ? 'Blocking' : 'Observation' }}
+                <span v-if="p.error_code" class="ml-1 text-gray-600">· {{ p.error_code }}</span>
+              </span>
+              <span class="text-xs text-gray-500">{{ formatDateTime(p.reported_at) }}</span>
+            </div>
+            <p class="mt-1 whitespace-pre-wrap text-gray-800">{{ p.description }}</p>
+            <p class="mt-1 text-xs text-gray-500">
+              Reported by {{ p.reporter_name || 'unknown' }} · status {{ p.status }}
+            </p>
+          </li>
+        </ul>
       </section>
 
       <section class="rounded-lg border border-gray-200 bg-white p-4">
@@ -67,20 +95,32 @@
         </div>
       </section>
 
-      <UButton
-        v-if="firing.status === 'open'"
-        :to="`/firing/${id}/close`"
-        block
-        size="lg"
-      >
-        Close this firing
-      </UButton>
+      <div class="flex flex-wrap gap-2">
+        <UButton
+          v-if="firing.status === 'open'"
+          :to="`/firing/${id}/close`"
+          block
+          size="lg"
+        >
+          Close this firing
+        </UButton>
+        <UButton
+          v-else
+          :to="`/firing/${id}/problem`"
+          variant="outline"
+          icon="i-heroicons-bell-alert"
+          size="md"
+        >
+          Report a problem
+        </UButton>
+      </div>
     </template>
   </div>
 </template>
 
 <script setup lang="ts">
 import type { FiringEntry } from '~/composables/useFirings'
+import type { ProblemEntry } from '~/composables/useProblems'
 import type { Timestamp, Unsubscribe } from 'firebase/firestore'
 
 definePageMeta({ middleware: ['auth'] })
@@ -89,18 +129,27 @@ const route = useRoute()
 const id = computed(() => String(route.params.id))
 
 const { watchFiring } = useFirings()
+const { watchProblemsForFiring } = useProblems()
 
 const firing = ref<FiringEntry | null>(null)
+const problems = ref<ProblemEntry[]>([])
 const loading = ref(true)
-let unsub: Unsubscribe | null = null
+let unsubFiring: Unsubscribe | null = null
+let unsubProblems: Unsubscribe | null = null
 
 onMounted(() => {
-  unsub = watchFiring(id.value, (f) => {
+  unsubFiring = watchFiring(id.value, (f) => {
     firing.value = f
     loading.value = false
   })
+  unsubProblems = watchProblemsForFiring(id.value, (list) => {
+    problems.value = list
+  })
 })
-onBeforeUnmount(() => { if (unsub) unsub() })
+onBeforeUnmount(() => {
+  if (unsubFiring) unsubFiring()
+  if (unsubProblems) unsubProblems()
+})
 
 function formatDateTime(ts: Timestamp): string {
   return ts.toDate().toLocaleString(undefined, {

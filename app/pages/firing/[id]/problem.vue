@@ -2,8 +2,12 @@
   <div class="space-y-6">
     <h1 class="text-2xl font-semibold">Report a problem</h1>
 
-    <div v-if="!kiln" class="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">
-      Unknown kiln <code>{{ kilnId }}</code>.
+    <div v-if="loading" class="rounded-lg border border-gray-200 bg-white p-4 text-sm text-gray-500">
+      Loading…
+    </div>
+
+    <div v-else-if="!firing" class="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+      Firing not found.
       <UButton class="ml-2" size="sm" variant="ghost" color="blue" to="/">Back home</UButton>
     </div>
 
@@ -13,8 +17,9 @@
       @submit.prevent="onSubmit"
     >
       <section class="rounded-md bg-gray-50 px-3 py-2 text-sm text-gray-700">
-        <span class="font-semibold">{{ kiln.display_name }}</span>
-        <span class="ml-2 text-xs text-gray-500">{{ kiln.type }}</span>
+        <span class="font-semibold">{{ firing.kiln_id }}</span>
+        <span v-if="firing.program_label" class="ml-2 text-gray-600">{{ firing.program_label }}</span>
+        <span class="ml-2 text-xs text-gray-500">started {{ formatStart(firing.start_datetime) }}</span>
       </section>
 
       <div>
@@ -75,23 +80,37 @@
         Submit report
       </UButton>
       <div class="text-center">
-        <UButton variant="ghost" color="blue" size="sm" to="/">Cancel</UButton>
+        <UButton variant="ghost" color="blue" size="sm" :to="`/firing/${id}`">Cancel</UButton>
       </div>
     </form>
   </div>
 </template>
 
 <script setup lang="ts">
+import type { FiringEntry } from '~/composables/useFirings'
 import type { ProblemSeverity } from '~/composables/useProblems'
+import type { Timestamp, Unsubscribe } from 'firebase/firestore'
 
 definePageMeta({ middleware: ['auth'] })
 
 const route = useRoute()
+const id = computed(() => String(route.params.id))
+
 const { state: lookupState } = useLookups()
+const { watchFiring } = useFirings()
 const { reportProblem } = useProblems()
 
-const kilnId = computed(() => String(route.query.kiln || ''))
-const kiln = computed(() => lookupState.value.kilns.find((k) => k.id === kilnId.value) || null)
+const firing = ref<FiringEntry | null>(null)
+const loading = ref(true)
+let unsub: Unsubscribe | null = null
+
+onMounted(() => {
+  unsub = watchFiring(id.value, (f) => {
+    firing.value = f
+    loading.value = false
+  })
+})
+onBeforeUnmount(() => { if (unsub) unsub() })
 
 const severity = ref<ProblemSeverity>(
   route.query.severity === 'non_blocking' ? 'non_blocking' : 'blocking'
@@ -102,27 +121,39 @@ const submitting = ref(false)
 const error = ref<string | null>(null)
 
 const canSubmit = computed(() =>
-  Boolean(kiln.value && description.value.trim() && !submitting.value)
+  Boolean(firing.value && description.value.trim() && !submitting.value)
 )
 
+const kilnType = computed(() => {
+  const k = lookupState.value.kilns.find((x) => x.id === firing.value?.kiln_id)
+  return k?.type ?? 'electric'
+})
+
 async function onSubmit() {
-  if (!canSubmit.value || !kiln.value) return
+  if (!canSubmit.value || !firing.value) return
   submitting.value = true
   error.value = null
   try {
     await reportProblem({
-      kiln_id: kiln.value.id,
-      kiln_type: kiln.value.type,
+      kiln_id: firing.value.kiln_id,
+      kiln_type: kilnType.value,
+      firing_id: id.value,
+      ...(firing.value.program_label ? { program_label: firing.value.program_label } : {}),
       severity: severity.value,
       ...(errorCode.value.trim() ? { error_code: errorCode.value } : {}),
       description: description.value,
     })
-    await navigateTo('/')
+    await navigateTo(`/firing/${id.value}`)
   } catch (err: any) {
-    console.error('[problem/new] submit failed', err)
+    console.error('[firing/problem] submit failed', err)
     error.value = err?.message || 'Failed to submit report.'
   } finally {
     submitting.value = false
   }
+}
+
+function formatStart(ts: Timestamp): string {
+  const d = ts.toDate()
+  return d.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
 }
 </script>

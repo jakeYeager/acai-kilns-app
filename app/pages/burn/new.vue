@@ -1,9 +1,6 @@
 <template>
   <div class="space-y-6">
-    <header class="flex items-center justify-between">
-      <h1 class="text-2xl font-semibold">Log a burn</h1>
-      <UButton variant="ghost" color="blue" size="sm" to="/">Cancel</UButton>
-    </header>
+    <h1 class="text-2xl font-semibold">Log a burn</h1>
 
     <form
       class="space-y-6 rounded-lg border border-gray-200 bg-white p-4"
@@ -60,6 +57,9 @@
       >
         Log burn
       </UButton>
+      <div class="text-center">
+        <UButton variant="ghost" color="blue" size="sm" to="/">Cancel</UButton>
+      </div>
     </form>
   </div>
 </template>

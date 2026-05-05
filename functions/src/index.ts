@@ -2,10 +2,14 @@ import { initializeApp } from 'firebase-admin/app'
 import { getAuth } from 'firebase-admin/auth'
 import { getFirestore, FieldValue } from 'firebase-admin/firestore'
 import { logger } from 'firebase-functions'
+import { defineSecret, defineString } from 'firebase-functions/params'
 import { auth as authV1 } from 'firebase-functions/v1'
-import { onDocumentWritten } from 'firebase-functions/v2/firestore'
+import { onDocumentCreated, onDocumentWritten } from 'firebase-functions/v2/firestore'
 
 initializeApp()
+
+const SLACK_WEBHOOK_KILN_REPAIR = defineSecret('SLACK_WEBHOOK_KILN_REPAIR')
+const APP_URL = defineString('APP_URL', { default: '' })
 
 interface MemberDoc {
   email?: string
@@ -140,11 +144,108 @@ export const onMemberWrite = onDocumentWritten('members/{memberId}', async (even
   })
 })
 
+// ──────────────────────────────────────────────────────────────────────────
+// onCreateProblem (v2 firestore trigger)
+// On problems/{id} create:
+//   - posts a structured message to #kiln-repair via Slack webhook
+//     (degrades to console.log when SLACK_WEBHOOK_KILN_REPAIR is unset, so
+//     emulator runs and webhook-less envs don't crash)
+//   - flips has_problem=true on the parent firing if firing_id is set
+//   - stamps slack_posted_at on the problem so we know the side-effect ran
+// ──────────────────────────────────────────────────────────────────────────
+
+interface ProblemPayload {
+  reporter_name?: string
+  kiln_id?: string
+  firing_id?: string
+  program_label?: string
+  severity?: 'blocking' | 'non_blocking'
+  error_code?: string
+  description?: string
+}
+
+function buildSlackPayload(p: ProblemPayload, problemId: string, appUrl: string): { text: string } {
+  const icon = p.severity === 'blocking' ? ':rotating_light:' : ':warning:'
+  const sev = p.severity === 'blocking' ? 'Blocking' : 'Observation'
+  const headline = [p.kiln_id, p.program_label].filter(Boolean).join(' · ')
+  const lines = [`${icon} *${sev}* — ${headline || 'unknown kiln'}`]
+  if (p.error_code) lines.push(`*Error code:* ${p.error_code}`)
+  if (p.description) lines.push(`*Description:* ${p.description}`)
+  if (p.reporter_name) lines.push(`*Reported by:* ${p.reporter_name}`)
+  if (appUrl) {
+    const link = p.firing_id
+      ? `${appUrl.replace(/\/$/, '')}/firing/${p.firing_id}`
+      : `${appUrl.replace(/\/$/, '')}/admin/problems`
+    lines.push(`<${link}|View>`)
+  }
+  return { text: lines.join('\n') }
+}
+
+export const onCreateProblem = onDocumentCreated(
+  { document: 'problems/{problemId}', secrets: [SLACK_WEBHOOK_KILN_REPAIR] },
+  async (event) => {
+    const snap = event.data
+    if (!snap) return
+    const problem = snap.data() as ProblemPayload
+    const problemId = event.params.problemId
+
+    const webhook = SLACK_WEBHOOK_KILN_REPAIR.value()
+    const appUrl = APP_URL.value()
+    const payload = buildSlackPayload(problem, problemId, appUrl)
+
+    let slackPostedAt: FirebaseFirestore.FieldValue | null = null
+    if (!webhook) {
+      logger.info('[problems] SLACK_WEBHOOK_KILN_REPAIR unset — skipping Slack post', {
+        problemId,
+        payload,
+      })
+    } else {
+      try {
+        const res = await fetch(webhook, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(payload),
+        })
+        if (!res.ok) {
+          const body = await res.text()
+          logger.error('[problems] Slack post failed', { problemId, status: res.status, body })
+        } else {
+          slackPostedAt = FieldValue.serverTimestamp()
+        }
+      } catch (err) {
+        logger.error('[problems] Slack post threw', { problemId, err: String(err) })
+      }
+    }
+
+    const db = getFirestore()
+    const updates: Record<string, unknown> = {}
+    if (slackPostedAt) updates.slack_posted_at = slackPostedAt
+    if (Object.keys(updates).length) {
+      await snap.ref.update(updates)
+    }
+
+    if (problem.firing_id) {
+      try {
+        await db.collection('firings').doc(problem.firing_id).update({
+          has_problem: true,
+          updated_at: FieldValue.serverTimestamp(),
+        })
+      } catch (err) {
+        logger.warn('[problems] could not flip has_problem on firing', {
+          problemId,
+          firing_id: problem.firing_id,
+          err: String(err),
+        })
+      }
+    }
+  }
+)
+
 // Phase 0 ping kept for sanity-check and emulator smoke tests.
 export const ping = (() => {
   const { onRequest } = require('firebase-functions/v2/https')
   return onRequest((req: unknown, res: { json: (b: unknown) => void }) => {
     logger.info('ping')
-    res.json({ ok: true, app: 'acai-kilns', phase: '3a' })
+    res.json({ ok: true, app: 'acai-kilns', phase: '6' })
   })
 })()

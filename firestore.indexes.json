@@ -47,6 +47,14 @@
         { "fieldPath": "kiln_id", "order": "ASCENDING" },
         { "fieldPath": "refilled_at", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "problems",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "firing_id", "order": "ASCENDING" },
+        { "fieldPath": "reported_at", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

@@ -160,15 +160,19 @@ Goal: open and close electric firings end-to-end with the right pickers, validat
 
 ---
 
-## Phase 6 — Problems flow C + Slack stub ⬜
+## Phase 6 — Problems flow C + Slack stub ✅ (pending live smoke test)
 
-- ⬜ `ProblemForm` component
-- ⬜ Flow C entry points: inline in Flow B, `/firing/[id]/problem`, out-of-band from home
-- ⬜ Cloud Function `onCreateProblem` — formats the message, posts to `#kiln-repair` webhook (stub if `SLACK_WEBHOOK_KILN_REPAIR` unset; logs payload to console)
-- ⬜ `has_problem` flag updated on parent firing
-- ⬜ `/admin/problems` triage view (open / acknowledged / resolved)
+- ✅ Schema reconciled to plan §3: `severity` (`blocking` | `non_blocking`), `description`, optional `firing_id` + `program_label` denorms, optional `slack_posted_at`. Replaces the old `type` (`error_code` | `general`) + `body` shape. (No data migration needed — dev was wiped after Phase 5.)
+- ⬜ Stand-alone `ProblemForm` component **deferred**. The two entry-point pages (`/problem/new`, `/firing/[id]/problem`) share the severity/error-code/description block but diverge on context (kiln-only vs firing-scoped). Extraction would still need conditional logic and gates nothing — left in place pending a third call site.
+- ✅ Flow C entry points: inline-in-Flow-B (checkbox on close form → routes to problem page after close), `/firing/[id]/problem` (auto-fills firing_id + program_label), out-of-band via `/problem/new?kiln=…&severity=…` from KilnCard / GasKilnCard
+- ✅ Cloud Function `onCreateProblem` — formats markdown, posts to `#kiln-repair` (Slack `defineSecret('SLACK_WEBHOOK_KILN_REPAIR')`; degrades to `logger.info` payload when unset). Stamps `slack_posted_at` only on successful POST.
+- ✅ `has_problem: true` flipped on parent firing when `firing_id` present
+- ✅ `/admin/problems` triage view: status filter pills (open / acknowledged / resolved / all) with counts, severity-tinted cards, acknowledge / resolve / reopen actions, optional resolution notes via modal. Admin-only via new `app/middleware/admin.ts`.
+- ✅ Firing detail (`/firing/[id]`) shows a "Problem reported" badge when `has_problem=true`, lists problems via `watchProblemsForFiring`, and exposes a "Report a problem" button on closed firings
+- ✅ Composite index added: `problems` × (`firing_id`, `reported_at desc`)
+- ⬜ Live smoke test (Jake): file blocking + non-blocking problems, see them on `/admin/problems`, run an admin transition, verify Slack post lands
 
-**Exit criteria:** filing a problem on a firing flips its badge and (when webhook set) posts to `#kiln-repair`.
+**Exit criteria:** filing a problem on a firing flips its badge and (when webhook set) posts to `#kiln-repair`. Code in place; emulator + Slack verification next.
 
 ---
 

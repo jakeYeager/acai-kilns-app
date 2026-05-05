@@ -1,9 +1,6 @@
 <template>
   <div class="space-y-6">
-    <header class="flex items-center justify-between">
-      <h1 class="text-2xl font-semibold">Close firing</h1>
-      <UButton variant="ghost" color="blue" size="sm" :to="`/firing/${id}`">Cancel</UButton>
-    </header>
+    <h1 class="text-2xl font-semibold">Close firing</h1>
 
     <div v-if="loading" class="rounded-lg border border-gray-200 bg-white p-4 text-sm text-gray-500">
       Loading…
@@ -50,11 +47,24 @@
 
       <NotesInput v-model="notes" />
 
+      <label class="flex items-start gap-2 text-sm">
+        <UCheckbox v-model="reportProblem" />
+        <span>
+          <span class="font-medium text-gray-700">Report a problem with this firing</span>
+          <span class="block text-xs text-gray-500">
+            Continues to a problem report after closing.
+          </span>
+        </span>
+      </label>
+
       <p v-if="error" class="text-sm text-red-600">{{ error }}</p>
 
       <UButton type="submit" block size="lg" :loading="submitting" :disabled="!canSubmit">
-        Close firing
+        {{ reportProblem ? 'Close firing & report' : 'Close firing' }}
       </UButton>
+      <div class="text-center">
+        <UButton variant="ghost" color="blue" size="sm" :to="`/firing/${id}`">Cancel</UButton>
+      </div>
     </form>
   </div>
 </template>
@@ -88,6 +98,7 @@ const unloadTempRaw = ref('')
 const unloadDateTime = ref<Date | null>(null)
 const durationMinutes = ref<number | null>(null)
 const notes = ref('')
+const reportProblem = ref(false)
 const submitting = ref(false)
 const error = ref<string | null>(null)
 
@@ -133,7 +144,7 @@ async function onSubmit() {
       duration_minutes: durationMinutes.value!,
       ...(notes.value ? { notes: notes.value } : {}),
     })
-    await navigateTo(`/firing/${id.value}`)
+    await navigateTo(reportProblem.value ? `/firing/${id.value}/problem` : `/firing/${id.value}`)
   } catch (err: any) {
     console.error('[firing/close] submit failed', err)
     error.value = err?.message || 'Failed to close firing.'
